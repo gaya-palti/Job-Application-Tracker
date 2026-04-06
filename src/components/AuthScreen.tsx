@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { auth, googleProvider } from '../firebase';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db, googleProvider } from '../firebase';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Briefcase, Mail, Lock, LogIn, UserPlus, Chrome } from 'lucide-react';
+import { UserSettings } from '../types';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,7 +17,24 @@ export default function AuthScreen() {
     setLoading(true);
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const userDocRef = doc(db, 'users', user.uid);
+      const snapshot = await getDoc(userDocRef);
+      if (!snapshot.exists()) {
+        const initialSettings: UserSettings = {
+          name: user.displayName || '',
+          email: user.email || '',
+          location: '',
+          photoURL: user.photoURL || '',
+          theme: 'dark',
+          notifications: {
+            followUp: true,
+            interviewReminder: true,
+          }
+        };
+        await setDoc(userDocRef, initialSettings);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -31,7 +50,23 @@ export default function AuthScreen() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Initialize user settings in Firestore immediately
+        const userDocRef = doc(db, 'users', user.uid);
+        const initialSettings: UserSettings = {
+          name: email.split('@')[0],
+          email: email,
+          location: '',
+          photoURL: '',
+          theme: 'dark',
+          notifications: {
+            followUp: true,
+            interviewReminder: true,
+          }
+        };
+        await setDoc(userDocRef, initialSettings);
       }
     } catch (err: any) {
       setError(err.message);

@@ -211,7 +211,7 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
                 onClick={onResetData}
                 className="px-6 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all active:scale-95"
               >
-                Reset Vault
+                Reset Data
               </button>
             </div>
           </div>

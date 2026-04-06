@@ -15,9 +15,10 @@ import { signOut } from 'firebase/auth';
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onSupportClick: () => void;
 }
 
-export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+export default function Sidebar({ activeTab, onTabChange, onSupportClick }: SidebarProps) {
   const navItems = [
     { icon: LayoutGrid, label: 'Pipeline' },
     { icon: BarChart3, label: 'Analytics' },
@@ -41,7 +42,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
         <div>
           <h2 className="text-on-surface font-bold text-lg tracking-tight">Career<span className="text-primary">OS</span></h2>
-          <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest">Active Session</p>
+          <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest">Career Mode</p>
         </div>
       </div>
       
@@ -64,6 +65,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
       <div className="mt-auto border-t border-white/5 pt-6 flex flex-col gap-y-1">
         <button
+          onClick={onSupportClick}
           className="flex items-center w-full gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest/40 transition-all duration-300"
         >
           <HelpCircle size={20} />
