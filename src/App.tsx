@@ -56,14 +56,10 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Theme Sync
+  // Theme Sync (Removed per user request, defaulting to dark)
   useEffect(() => {
-    if (settings.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [settings.theme]);
+    document.documentElement.classList.add('dark');
+  }, []);
 
   // Firestore Sync
   useEffect(() => {
@@ -188,6 +184,7 @@ export default function App() {
         title: jobData.title || '',
         company: jobData.company || '',
         location: jobData.location || 'Remote',
+        salary: jobData.salary || '',
         logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDSV2Uc_w_e0n55SC1yBA6DW5tOwF6ZfF0xiSCSiUoWq5yLSaW4WiVIU9lEpZaBUKdBrDsJXBrxlsh0Y_i6KhV-HcdUB9shGePq-tr4EgpnOAdu9NyBAXIImgzoVViB6qN7PcfKV3c6xYEY3yIkoR0yh7sIapIvl3p9_SQktugg3UgCKuqrHBEumHsFz_vclvRXGsOgT2i4STc1aNhZnqBquYN3fT7BuB1pNGNvnXjE8xEEOkhDYtC4Al0TTdV5cnEtSshqhKpVSYnI',
         status: jobData.status || 'Bookmarked',
         postedAt: new Date().toISOString(),
@@ -305,6 +302,36 @@ export default function App() {
     }
   };
 
+  const handleResetData = async () => {
+    if (!user) return;
+    if (!window.confirm('Are you sure you want to permanently delete ALL your data? This cannot be undone.')) return;
+
+    try {
+      // Delete jobs
+      const jobsToDelete = [...jobs];
+      for (const job of jobsToDelete) {
+        await deleteDoc(doc(db, 'users', user.uid, 'jobs', job.id));
+      }
+
+      // Delete documents
+      const docsToDelete = [...documents];
+      for (const docItem of docsToDelete) {
+        await deleteDoc(doc(db, 'users', user.uid, 'documents', docItem.id));
+      }
+
+      // Delete quick links
+      const linksToDelete = [...quickLinks];
+      for (const link of linksToDelete) {
+        await deleteDoc(doc(db, 'users', user.uid, 'quickLinks', link.id));
+      }
+
+      alert('All data has been cleared.');
+    } catch (e) {
+      console.error('Failed to reset data', e);
+      alert('Failed to clear some data. Please try again.');
+    }
+  };
+
   if (!isAuthReady) {
     return (
       <div className="h-screen bg-surface flex items-center justify-center">
@@ -333,7 +360,7 @@ export default function App() {
           />
         );
       case 'Settings':
-        return <SettingsScreen settings={settings} onUpdateSettings={handleUpdateSettings} />;
+        return <SettingsScreen settings={settings} onUpdateSettings={handleUpdateSettings} onResetData={handleResetData} />;
       case 'Archive':
       case 'Pipeline':
       default:
@@ -349,7 +376,7 @@ export default function App() {
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden transition-colors duration-300 bg-surface ${settings.theme === 'dark' ? 'dark' : ''}`}>
+    <div className="flex h-screen overflow-hidden transition-colors duration-300 bg-surface dark">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="flex-1 flex flex-col min-w-0 relative h-screen">
         <TopBar 
@@ -358,7 +385,7 @@ export default function App() {
           onTabChange={setActiveTab} 
           settings={settings} 
         />
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {renderContent()}
         </div>
         <JobDetailsModal 

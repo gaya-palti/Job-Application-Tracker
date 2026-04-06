@@ -11,9 +11,10 @@ import { signOut } from 'firebase/auth';
 interface SettingsScreenProps {
   settings: UserSettings;
   onUpdateSettings: (updates: Partial<UserSettings>) => void;
+  onResetData: () => void;
 }
 
-export default function SettingsScreen({ settings, onUpdateSettings }: SettingsScreenProps) {
+export default function SettingsScreen({ settings, onUpdateSettings, onResetData }: SettingsScreenProps) {
   const [localSettings, setLocalSettings] = useState<UserSettings>(settings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -154,36 +155,6 @@ export default function SettingsScreen({ settings, onUpdateSettings }: SettingsS
           </div>
         </section>
 
-        {/* Appearance Section */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-            <Sun className="text-secondary" size={20} />
-            <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface">Appearance</h3>
-          </div>
-          <div className="flex items-center justify-between p-6 glass-panel border border-white/5 rounded-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
-                {localSettings.theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
-              </div>
-              <div>
-                <p className="text-sm font-bold text-on-surface">Theme Mode</p>
-                <p className="text-xs text-on-surface-variant">Switch between light and dark visual styles.</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setLocalSettings({ ...localSettings, theme: localSettings.theme === 'dark' ? 'light' : 'dark' })}
-              className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 relative ${
-                localSettings.theme === 'dark' ? 'bg-primary' : 'bg-surface-container-highest'
-              }`}
-            >
-              <motion.div 
-                animate={{ x: localSettings.theme === 'dark' ? 24 : 0 }}
-                className="w-6 h-6 bg-white rounded-full shadow-lg"
-              />
-            </button>
-          </div>
-        </section>
-
         {/* Notifications Section */}
         <section className="space-y-6">
           <div className="flex items-center gap-3 border-b border-white/5 pb-4">
@@ -236,7 +207,10 @@ export default function SettingsScreen({ settings, onUpdateSettings }: SettingsS
                 <p className="text-sm font-bold text-on-surface">Clear All Data</p>
                 <p className="text-xs text-on-surface-variant">Permanently delete all job applications.</p>
               </div>
-              <button className="px-6 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all active:scale-95">
+              <button 
+                onClick={onResetData}
+                className="px-6 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all active:scale-95"
+              >
                 Reset Vault
               </button>
             </div>

@@ -13,22 +13,24 @@ export default function TopBar({ onAddJob, activeTab, onTabChange, settings }: T
     <header className="w-full sticky top-0 z-50 bg-surface/70 backdrop-blur-xl flex justify-between items-center px-8 py-4 border-b border-white/5">
       <div className="flex items-center gap-8">
         <h1 className="text-xl font-bold text-on-surface tracking-tight">
-          {activeTab} <span className="text-primary">/</span> Dashboard
+          {activeTab}
         </h1>
-        <div className="hidden md:flex items-center gap-6">
-          <button 
-            onClick={() => onTabChange('Pipeline')}
-            className={`text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'Pipeline' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-          >
-            Pipeline
-          </button>
-          <button 
-            onClick={() => onTabChange('Archive')}
-            className={`text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'Archive' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-          >
-            Archive
-          </button>
-        </div>
+        {(activeTab === 'Pipeline' || activeTab === 'Archive') && (
+          <div className="hidden md:flex items-center gap-6">
+            <button 
+              onClick={() => onTabChange('Pipeline')}
+              className={`text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'Pipeline' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              Pipeline
+            </button>
+            <button 
+              onClick={() => onTabChange('Archive')}
+              className={`text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'Archive' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+            >
+              Archive
+            </button>
+          </div>
+        )}
       </div>
       
       <div className="flex items-center gap-4">

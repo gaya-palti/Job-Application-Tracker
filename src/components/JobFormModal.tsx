@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileCheck, Plus, Trash2, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import { X, FileCheck, Plus, Trash2, CheckCircle2, Clock, Calendar, Link as LinkIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Job, JobStatus, Document } from '../types';
+import { extractJobFromUrl } from '../services/jobExtractionService';
 
 interface JobFormModalProps {
   isOpen: boolean;
@@ -18,12 +19,16 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
     location: '',
     description: '',
     status: 'Bookmarked',
+    salary: '',
     requirements: [],
     roadmap: [],
     resumeId: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [jobUrl, setJobUrl] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -39,6 +44,7 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
         location: '',
         description: '',
         status: 'Bookmarked',
+        salary: '',
         requirements: [],
         roadmap: [
           { label: 'Initial Screening', status: 'upcoming', details: 'Pending' }
@@ -47,7 +53,36 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
       });
     }
     setErrors({});
+    setJobUrl('');
+    setExtractionError(null);
   }, [initialData, isOpen]);
+
+  const handleAutoFill = async () => {
+    if (!jobUrl.trim()) {
+      setExtractionError('Please enter a valid URL');
+      return;
+    }
+
+    setIsExtracting(true);
+    setExtractionError(null);
+
+    try {
+      const extractedData = await extractJobFromUrl(jobUrl);
+      setFormData(prev => ({
+        ...prev,
+        title: extractedData.title,
+        company: extractedData.company,
+        location: extractedData.location,
+        salary: extractedData.salary,
+        description: extractedData.description,
+        requirements: extractedData.requirements,
+      }));
+    } catch (err: any) {
+      setExtractionError(err.message || 'Failed to extract job details');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -125,6 +160,40 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
 
           <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+              {/* Auto-fill from URL */}
+              {!initialData && (
+                <div className="bg-surface-container-highest/30 border border-primary/20 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Sparkles size={16} />
+                    <span className="text-xs font-bold uppercase tracking-widest">Auto-fill from URL</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={14} />
+                      <input
+                        type="url"
+                        value={jobUrl}
+                        onChange={(e) => setJobUrl(e.target.value)}
+                        className="w-full bg-surface-container-low border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                        placeholder="Paste job posting URL (e.g. LinkedIn, Indeed...)"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAutoFill}
+                      disabled={isExtracting}
+                      className="bg-primary/10 text-primary hover:bg-primary hover:text-on-primary px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                      {isExtracting ? 'Extracting...' : 'Auto-fill'}
+                    </button>
+                  </div>
+                  {extractionError && (
+                    <p className="text-[10px] text-primary font-bold uppercase tracking-wider">{extractionError}</p>
+                  )}
+                </div>
+              )}
+
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -183,6 +252,19 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
                     <option value="Onsite">Onsite</option>
                     <option value="Offers">Offer</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                    Salary Range
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.salary || ''}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    className="w-full bg-surface-container-highest border border-white/5 rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                    placeholder="e.g. $120k - $150k"
+                  />
                 </div>
               </div>
 
