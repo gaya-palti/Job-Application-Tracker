@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-bright: var(--surface-bright);
+  
+  --color-primary: var(--primary);
+  --color-primary-dim: var(--primary-dim);
+  --color-on-primary: var(--on-primary);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-dim: var(--secondary-dim);
+  
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-dim: var(--tertiary-dim);
+  
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline-variant: var(--outline-variant);
+  --color-on-surface: var(--on-surface);
+}
+
+:root {
+  --surface: #ffffff;
+  --surface-container-low: #f5f5f5;
+  --surface-container-high: #e5e5e5;
+  --surface-container-highest: #d4d4d4;
+  --surface-bright: #ffffff;
+  
+  --primary: #00bcd4;
+  --primary-dim: #0097a7;
+  --on-primary: #ffffff;
+  
+  --secondary: #9c27b0;
+  --secondary-dim: #7b1fa2;
+  
+  --tertiary: #4caf50;
+  --tertiary-dim: #388e3c;
+  
+  --on-surface-variant: #666666;
+  --on-surface: #1a1a1a;
+  --outline-variant: #cccccc;
+}
+
+.dark {
+  --surface: #0e0e0e;
+  --surface-container-low: #131313;
+  --surface-container-high: #20201f;
+  --surface-container-highest: #262626;
+  --surface-bright: #2c2c2c;
+  
+  --primary: #81ecff;
+  --primary-dim: #00d4ec;
+  --on-primary: #005762;
+  
+  --secondary: #c180ff;
+  --secondary-dim: #9c48ea;
+  
+  --tertiary: #c5ffc9;
+  --tertiary-dim: #5bf083;
+  
+  --on-surface-variant: #adaaaa;
+  --on-surface: #ffffff;
+  --outline-variant: #484847;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased transition-colors duration-300;
+  }
+}
+
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-panel {
+  background: rgba(14, 14, 14, 0.7);
+}
+
+.glow-chip-primary {
+  border: 1px solid rgba(129, 236, 255, 0.3);
+}
+
+.glow-chip-secondary {
+  border: 1px solid rgba(193, 128, 255, 0.3);
+}
+
+.glow-chip-tertiary {
+  border: 1px solid rgba(197, 255, 201, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #2c2c2c;
+}

@@ -1,0 +1,153 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {uid}
+// Fields:
+//   - name: string (optional)
+//   - email: string (required)
+//   - location: string (optional)
+//   - photoURL: string (optional)
+//   - theme: string (required, 'light' | 'dark')
+//   - notifications: map (required)
+//     - followUp: bool
+//     - interviewReminder: bool
+//
+// Collection: users/{uid}/jobs
+// Document ID: {jobId}
+// Fields:
+//   - title: string (required)
+//   - company: string (required)
+//   - location: string (optional)
+//   - logo: string (optional)
+//   - status: string (required, enum)
+//   - description: string (optional)
+//   - requirements: list (optional)
+//   - roadmap: list (optional)
+//   - resumeId: string (optional)
+//   - uid: string (required, matches owner)
+//
+// Collection: users/{uid}/documents
+// Document ID: {docId}
+// Fields:
+//   - name: string (required)
+//   - type: string (required, enum)
+//   - version: string (optional)
+//   - tag: string (optional)
+//   - url: string (optional)
+//   - uid: string (required, matches owner)
+//
+// Collection: users/{uid}/quickLinks
+// Document ID: {linkId}
+// Fields:
+//   - label: string (required)
+//   - url: string (required)
+//   - uid: string (required, matches owner)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "gayapalti@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*") || url == "#");
+    }
+
+    function isValidList(list, maxSize) {
+      return list is list && list.size() <= maxSize;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['name', 'email', 'location', 'photoURL', 'theme', 'notifications']) &&
+             data.email is string && isValidEmail(data.email) &&
+             data.theme in ['light', 'dark'] &&
+             data.notifications is map;
+    }
+
+    function isValidJob(data) {
+      return hasOnlyAllowedFields(['id', 'title', 'company', 'location', 'logo', 'status', 'postedAt', 'salary', 'description', 'requirements', 'roadmap', 'tag', 'codeChallengeLinks', 'interviewNotes', 'resumeId', 'uid']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.company is string && data.company.size() > 0 && data.company.size() < 200 &&
+             data.status in ['Bookmarked', 'Applied', 'Technical Assessment', 'Onsite', 'Offers', 'Archived'] &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidDocument(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'type', 'version', 'tag', 'url', 'uploadedAt', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.type in ['pdf', 'docx', 'other'] &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidQuickLink(data) {
+      return hasOnlyAllowedFields(['id', 'label', 'url', 'uid']) &&
+             data.label is string && data.label.size() > 0 && data.label.size() < 100 &&
+             isValidUrl(data.url) &&
+             data.uid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /jobs/{jobId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidJob(request.resource.data);
+        allow update: if isOwner(userId) && isValidJob(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /documents/{docId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidDocument(request.resource.data);
+        allow update: if isOwner(userId) && isValidDocument(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /quickLinks/{linkId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidQuickLink(request.resource.data);
+        allow update: if isOwner(userId) && isValidQuickLink(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+  }
+}

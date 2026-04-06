@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "Job": {
+      "title": "Job Application",
+      "description": "Details about a job application",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "company": { "type": "string" },
+        "location": { "type": "string" },
+        "logo": { "type": "string" },
+        "status": { "type": "string", "enum": ["Bookmarked", "Applied", "Technical Assessment", "Onsite", "Offers", "Archived"] },
+        "postedAt": { "type": "string" },
+        "salary": { "type": "string" },
+        "description": { "type": "string" },
+        "requirements": { "type": "array", "items": { "type": "string" } },
+        "roadmap": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "status": { "type": "string", "enum": ["completed", "in-progress", "upcoming"] },
+              "details": { "type": "string" }
+            }
+          }
+        },
+        "tag": { "type": "string" },
+        "codeChallengeLinks": { "type": "array", "items": { "type": "string" } },
+        "interviewNotes": { "type": "string" },
+        "resumeId": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["title", "company", "status", "uid"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "A resume or cover letter",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["pdf", "docx", "other"] },
+        "version": { "type": "string" },
+        "tag": { "type": "string" },
+        "url": { "type": "string" },
+        "uploadedAt": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "type", "uid"]
+    },
+    "QuickLink": {
+      "title": "Quick Link",
+      "description": "A link to a portfolio or profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "url": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["label", "url", "uid"]
+    },
+    "UserSettings": {
+      "title": "User Settings",
+      "description": "User profile and preferences",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "location": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "theme": { "type": "string", "enum": ["light", "dark"] },
+        "notifications": {
+          "type": "object",
+          "properties": {
+            "followUp": { "type": "boolean" },
+            "interviewReminder": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["email", "theme"]
+    }
+  },
+  "firestore": {
+    "users/{uid}": {
+      "schema": { "$ref": "UserSettings" },
+      "description": "User profile settings"
+    },
+    "users/{uid}/jobs/{jobId}": {
+      "schema": { "$ref": "Job" },
+      "description": "Job applications for a user"
+    },
+    "users/{uid}/documents/{docId}": {
+      "schema": { "$ref": "Document" },
+      "description": "Documents for a user"
+    },
+    "users/{uid}/quickLinks/{linkId}": {
+      "schema": { "$ref": "QuickLink" },
+      "description": "Quick links for a user"
+    }
+  }
+}
