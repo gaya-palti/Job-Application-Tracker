@@ -3,8 +3,9 @@ import { auth, db, googleProvider } from '../firebase';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
-import { Briefcase, Mail, Lock, LogIn, UserPlus, Chrome } from 'lucide-react';
+import { Briefcase, Mail, Lock, LogIn, UserPlus, Chrome, AlertCircle } from 'lucide-react';
 import { UserSettings } from '../types';
+import { formatFirebaseError } from '../lib/errorUtils';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,12 +32,19 @@ export default function AuthScreen() {
           notifications: {
             followUp: true,
             interviewReminder: true,
-          }
+          },
+          columns: [
+            { id: 'Bookmarked', title: 'Bookmarked' },
+            { id: 'Applied', title: 'Applied' },
+            { id: 'Technical Assessment', title: 'Technical' },
+            { id: 'Onsite', title: 'Onsite' },
+            { id: 'Offers', title: 'Offers' },
+          ]
         };
         await setDoc(userDocRef, initialSettings);
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(formatFirebaseError(err));
     } finally {
       setLoading(false);
     }
@@ -64,12 +72,19 @@ export default function AuthScreen() {
           notifications: {
             followUp: true,
             interviewReminder: true,
-          }
+          },
+          columns: [
+            { id: 'Bookmarked', title: 'Bookmarked' },
+            { id: 'Applied', title: 'Applied' },
+            { id: 'Technical Assessment', title: 'Technical' },
+            { id: 'Onsite', title: 'Onsite' },
+            { id: 'Offers', title: 'Offers' },
+          ]
         };
         await setDoc(userDocRef, initialSettings);
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(formatFirebaseError(err));
     } finally {
       setLoading(false);
     }
@@ -141,9 +156,16 @@ export default function AuthScreen() {
             </div>
 
             {error && (
-              <p className="text-primary text-xs font-bold uppercase tracking-wider text-center bg-primary/10 py-2 rounded-lg">
-                {error}
-              </p>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-start gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20"
+              >
+                <AlertCircle className="text-primary shrink-0 mt-0.5" size={16} />
+                <p className="text-primary text-xs font-medium leading-relaxed">
+                  {error}
+                </p>
+              </motion.div>
             )}
 
             <button 

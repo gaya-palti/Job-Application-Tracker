@@ -1,11 +1,11 @@
 import { Job, Column } from './types';
 
 export const COLUMNS: Column[] = [
-  { id: 'Bookmarked', title: 'Bookmarked', count: 3 },
-  { id: 'Applied', title: 'Applied', count: 12 },
-  { id: 'Technical Assessment', title: 'Technical', count: 3 },
-  { id: 'Onsite', title: 'Onsite', count: 1 },
-  { id: 'Offers', title: 'Offers', count: 1 },
+  { id: 'Bookmarked', title: 'Bookmarked' },
+  { id: 'Applied', title: 'Applied' },
+  { id: 'Technical Assessment', title: 'Technical' },
+  { id: 'Onsite', title: 'Onsite' },
+  { id: 'Offers', title: 'Offers' },
 ];
 
 export const MOCK_JOBS: Job[] = [

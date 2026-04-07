@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileCheck, Plus, Trash2, CheckCircle2, Clock, Calendar, Link as LinkIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Job, JobStatus, Document } from '../types';
+import { Job, JobStatus, Document, Column } from '../types';
 import { extractJobFromUrl } from '../services/jobExtractionService';
+import { formatFirebaseError } from '../lib/errorUtils';
 
 interface JobFormModalProps {
   isOpen: boolean;
@@ -10,15 +11,16 @@ interface JobFormModalProps {
   onSave: (job: Partial<Job>) => void;
   initialData?: Job | null;
   documents?: Document[];
+  columns: Column[];
 }
 
-export default function JobFormModal({ isOpen, onClose, onSave, initialData, documents = [] }: JobFormModalProps) {
+export default function JobFormModal({ isOpen, onClose, onSave, initialData, documents = [], columns }: JobFormModalProps) {
   const [formData, setFormData] = useState<Partial<Job>>({
     title: '',
     company: '',
     location: '',
     description: '',
-    status: 'Bookmarked',
+    status: columns[0]?.id || 'Bookmarked',
     salary: '',
     requirements: [],
     roadmap: [],
@@ -43,7 +45,7 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
         company: '',
         location: '',
         description: '',
-        status: 'Bookmarked',
+        status: columns[0]?.id || 'Bookmarked',
         salary: '',
         requirements: [],
         roadmap: [
@@ -55,7 +57,7 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
     setErrors({});
     setJobUrl('');
     setExtractionError(null);
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, columns]);
 
   const handleAutoFill = async () => {
     if (!jobUrl.trim()) {
@@ -78,7 +80,7 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
         requirements: extractedData.requirements,
       }));
     } catch (err: any) {
-      setExtractionError(err.message || 'Failed to extract job details');
+      setExtractionError(formatFirebaseError(err));
     } finally {
       setIsExtracting(false);
     }
@@ -243,14 +245,12 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as JobStatus })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full bg-surface-container-highest border border-white/5 rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all appearance-none"
                   >
-                    <option value="Bookmarked">Bookmarked</option>
-                    <option value="Applied">Applied</option>
-                    <option value="Technical Assessment">Technical</option>
-                    <option value="Onsite">Onsite</option>
-                    <option value="Offers">Offer</option>
+                    {columns.map(col => (
+                      <option key={col.id} value={col.id}>{col.title}</option>
+                    ))}
                   </select>
                 </div>
 

@@ -9,6 +9,7 @@ import DocumentsScreen from './components/DocumentsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import AuthScreen from './components/AuthScreen';
 import SupportModal from './components/SupportModal';
+import GlobalErrorBanner from './components/GlobalErrorBanner';
 import { Job, JobStatus, Document, QuickLink, UserSettings } from './types';
 import { DropResult } from '@hello-pangea/dnd';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
@@ -27,6 +28,7 @@ import {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [globalError, setGlobalError] = useState<any>(null);
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -40,7 +42,8 @@ export default function App() {
     notifications: {
       followUp: true,
       interviewReminder: true,
-    }
+    },
+    columns: []
   });
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -79,7 +82,22 @@ export default function App() {
 
     const unsubSettings = onSnapshot(userDocRef, (snapshot) => {
       if (snapshot.exists()) {
-        setSettings(snapshot.data() as UserSettings);
+        const data = snapshot.data() as UserSettings;
+        if (!data.columns) {
+          data.columns = [
+            { id: 'Bookmarked', title: 'Bookmarked' },
+            { id: 'Applied', title: 'Applied' },
+            { id: 'Technical Assessment', title: 'Technical' },
+            { id: 'Onsite', title: 'Onsite' },
+            { id: 'Offers', title: 'Offers' },
+          ];
+          // Update Firestore with default columns if missing
+          updateDoc(userDocRef, { columns: data.columns }).catch(e => {
+            const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}`);
+            setGlobalError(err);
+          });
+        }
+        setSettings(data);
       } else {
         // Initialize user settings if they don't exist
         const initialSettings: UserSettings = {
@@ -91,23 +109,45 @@ export default function App() {
           notifications: {
             followUp: true,
             interviewReminder: true,
-          }
+          },
+          columns: [
+            { id: 'Bookmarked', title: 'Bookmarked' },
+            { id: 'Applied', title: 'Applied' },
+            { id: 'Technical Assessment', title: 'Technical' },
+            { id: 'Onsite', title: 'Onsite' },
+            { id: 'Offers', title: 'Offers' },
+          ]
         };
-        setDoc(userDocRef, initialSettings).catch(e => handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}`));
+        setDoc(userDocRef, initialSettings).catch(e => {
+          const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}`);
+          setGlobalError(err);
+        });
       }
-    }, (e) => handleFirestoreError(e, OperationType.GET, `users/${user.uid}`));
+    }, (e) => {
+      const err = handleFirestoreError(e, OperationType.GET, `users/${user.uid}`);
+      setGlobalError(err);
+    });
 
     const unsubJobs = onSnapshot(query(jobsRef, orderBy('postedAt', 'desc')), (snapshot) => {
       setJobs(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Job)));
-    }, (e) => handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/jobs`));
+    }, (e) => {
+      const err = handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/jobs`);
+      setGlobalError(err);
+    });
 
     const unsubDocs = onSnapshot(docsRef, (snapshot) => {
       setDocuments(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Document)));
-    }, (e) => handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/documents`));
+    }, (e) => {
+      const err = handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/documents`);
+      setGlobalError(err);
+    });
 
     const unsubLinks = onSnapshot(linksRef, (snapshot) => {
       setQuickLinks(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuickLink)));
-    }, (e) => handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/quickLinks`));
+    }, (e) => {
+      const err = handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/quickLinks`);
+      setGlobalError(err);
+    });
 
     return () => {
       unsubSettings();
@@ -134,7 +174,8 @@ export default function App() {
         tag: newStatus === 'Offers' ? 'Signed' : (newStatus === 'Archived' ? 'Archived' : 'Updated')
       });
     } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${draggableId}`);
+      const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${draggableId}`);
+      setGlobalError(err);
     }
   };
 
@@ -144,27 +185,32 @@ export default function App() {
     try {
       await updateDoc(jobRef, updates);
     } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
+      const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
+      setGlobalError(err);
     }
   };
 
-  const handleUpdateStatus = async (jobId: string) => {
+  const handleUpdateStatus = async (jobId: string, newStatus?: string) => {
     if (!user) return;
     const job = jobs.find(j => j.id === jobId);
     if (!job) return;
 
-    const statusOrder: JobStatus[] = ['Bookmarked', 'Applied', 'Technical Assessment', 'Onsite', 'Offers'];
-    const currentIndex = statusOrder.indexOf(job.status);
-    const nextStatus = statusOrder[Math.min(currentIndex + 1, statusOrder.length - 1)];
+    let targetStatus = newStatus;
+    if (!targetStatus) {
+      const statusOrder = settings.columns.map(c => c.id);
+      const currentIndex = statusOrder.indexOf(job.status);
+      targetStatus = statusOrder[Math.min(currentIndex + 1, statusOrder.length - 1)];
+    }
     
     const jobRef = doc(db, 'users', user.uid, 'jobs', jobId);
     try {
       await updateDoc(jobRef, { 
-        status: nextStatus, 
-        tag: nextStatus === 'Offers' ? 'Signed' : nextStatus 
+        status: targetStatus, 
+        tag: targetStatus === 'Offers' ? 'Signed' : targetStatus 
       });
     } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
+      const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
+      setGlobalError(err);
     }
   };
 
@@ -176,7 +222,8 @@ export default function App() {
       try {
         await updateDoc(jobRef, jobData);
       } catch (e) {
-        handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${editingJob.id}`);
+        const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${editingJob.id}`);
+        setGlobalError(err);
       }
     } else {
       const jobId = Math.random().toString(36).substr(2, 9);
@@ -202,7 +249,8 @@ export default function App() {
       try {
         await setDoc(jobRef, newJob);
       } catch (e) {
-        handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/jobs/${jobId}`);
+        const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/jobs/${jobId}`);
+        setGlobalError(err);
       }
     }
     setEditingJob(null);
@@ -215,7 +263,8 @@ export default function App() {
       await updateDoc(jobRef, { status: 'Archived', tag: 'Archived' });
       setSelectedJobId(null);
     } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
+      const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
+      setGlobalError(err);
     }
   };
 
@@ -226,7 +275,8 @@ export default function App() {
       await deleteDoc(jobRef);
       setSelectedJobId(null);
     } catch (e) {
-      handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/jobs/${jobId}`);
+      const err = handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/jobs/${jobId}`);
+      setGlobalError(err);
     }
   };
 
@@ -256,7 +306,8 @@ export default function App() {
     try {
       await setDoc(doc(db, 'users', user.uid, 'documents', docId), newDoc);
     } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/documents/${docId}`);
+      const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/documents/${docId}`);
+      setGlobalError(err);
     }
   };
 
@@ -265,7 +316,8 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'documents', id));
     } catch (e) {
-      handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/documents/${id}`);
+      const err = handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/documents/${id}`);
+      setGlobalError(err);
     }
   };
 
@@ -281,7 +333,8 @@ export default function App() {
     try {
       await setDoc(doc(db, 'users', user.uid, 'quickLinks', linkId), newLink);
     } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/quickLinks/${linkId}`);
+      const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/quickLinks/${linkId}`);
+      setGlobalError(err);
     }
   };
 
@@ -290,7 +343,8 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'quickLinks', id));
     } catch (e) {
-      handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/quickLinks/${id}`);
+      const err = handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/quickLinks/${id}`);
+      setGlobalError(err);
     }
   };
 
@@ -300,8 +354,40 @@ export default function App() {
     try {
       await updateDoc(userDocRef, updates);
     } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}`);
+      const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}`);
+      setGlobalError(err);
     }
+  };
+
+  const handleAddColumn = async (title: string) => {
+    if (!user) return;
+    const newColumn = { id: title.toLowerCase().replace(/\s+/g, '-'), title };
+    const updatedColumns = [...settings.columns, newColumn];
+    await handleUpdateSettings({ columns: updatedColumns });
+  };
+
+  const handleRenameColumn = async (columnId: string, newTitle: string) => {
+    if (!user) return;
+    const updatedColumns = settings.columns.map(col => 
+      col.id === columnId ? { ...col, title: newTitle } : col
+    );
+    await handleUpdateSettings({ columns: updatedColumns });
+  };
+
+  const handleDeleteColumn = async (columnId: string) => {
+    if (!user) return;
+    if (!window.confirm('Are you sure you want to delete this column? Jobs in this column will be moved to the first column.')) return;
+    
+    const updatedColumns = settings.columns.filter(col => col.id !== columnId);
+    const firstColumnId = updatedColumns[0]?.id || 'Bookmarked';
+
+    // Move jobs to the first column
+    const jobsToUpdate = jobs.filter(j => j.status === columnId);
+    for (const job of jobsToUpdate) {
+      await handleUpdateStatus(job.id, firstColumnId);
+    }
+
+    await handleUpdateSettings({ columns: updatedColumns });
   };
 
   const handleResetData = async () => {
@@ -372,6 +458,10 @@ export default function App() {
             onJobClick={(job) => setSelectedJobId(job.id)} 
             activeTab={activeTab}
             onDragEnd={handleDragEnd}
+            columns={settings.columns}
+            onUpdateColumns={(cols) => handleUpdateSettings({ columns: cols })}
+            onRenameColumn={handleRenameColumn}
+            onDeleteColumn={handleDeleteColumn}
           />
         );
     }
@@ -379,6 +469,10 @@ export default function App() {
 
   return (
     <div className="flex h-screen overflow-hidden transition-colors duration-300 bg-surface dark">
+      <GlobalErrorBanner 
+        error={globalError} 
+        onClear={() => setGlobalError(null)} 
+      />
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSupportClick={() => setIsSupportOpen(true)} />
       <main className="flex-1 flex flex-col min-w-0 relative h-screen">
         <TopBar 
@@ -407,6 +501,7 @@ export default function App() {
           onSave={handleSaveJob}
           initialData={editingJob}
           documents={documents}
+          columns={settings.columns}
         />
         <SupportModal 
           isOpen={isSupportOpen} 

@@ -1,4 +1,4 @@
-export type JobStatus = 'Bookmarked' | 'Applied' | 'Technical Assessment' | 'Onsite' | 'Offers' | 'Archived';
+export type JobStatus = string;
 
 export interface Job {
   id: string;
@@ -51,10 +51,10 @@ export interface UserSettings {
     followUp: boolean;
     interviewReminder: boolean;
   };
+  columns: Column[];
 }
 
 export interface Column {
-  id: JobStatus;
+  id: string;
   title: string;
-  count: number;
 }

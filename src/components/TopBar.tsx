@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Bell, Plus } from 'lucide-react';
 import { UserSettings, Job } from '../types';
 import NotificationsDropdown from './NotificationsDropdown';
+import UserAvatar from './UserAvatar';
 
 interface TopBarProps {
   onAddJob: () => void;
@@ -59,14 +60,7 @@ export default function TopBar({ onAddJob, activeTab, onTabChange, settings, job
           <Plus size={18} />
           Add Application
         </button>
-        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest border border-white/10">
-          <img
-            className="w-full h-full object-cover"
-            src={settings.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"}
-            alt="User profile"
-            referrerPolicy="no-referrer"
-          />
-        </div>
+        <UserAvatar name={settings.name} photoURL={settings.photoURL} size="sm" />
       </div>
     </header>
   );

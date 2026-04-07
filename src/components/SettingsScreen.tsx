@@ -7,6 +7,8 @@ import { motion } from 'motion/react';
 import { UserSettings } from '../types';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import { formatFirebaseError } from '../lib/errorUtils';
+import UserAvatar from './UserAvatar';
 
 interface SettingsScreenProps {
   settings: UserSettings;
@@ -31,7 +33,7 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
       setSaveMessage('Settings saved successfully!');
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
-      setSaveMessage('Failed to save settings.');
+      setSaveMessage(formatFirebaseError(error));
     } finally {
       setIsSaving(false);
     }
@@ -45,8 +47,53 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (limit to 1MB for base64 storage in Firestore)
+    if (file.size > 1024 * 1024) {
+      setSaveMessage('File is too large. Please choose an image under 1MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      const updated = { ...localSettings, photoURL: base64String };
+      setLocalSettings(updated);
+      try {
+        await onUpdateSettings({ photoURL: base64String });
+        setSaveMessage('Profile photo updated!');
+        setTimeout(() => setSaveMessage(null), 3000);
+      } catch (error) {
+        setSaveMessage('Failed to update photo.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = async () => {
+    const updated = { ...localSettings, photoURL: '' };
+    setLocalSettings(updated);
+    try {
+      await onUpdateSettings({ photoURL: '' });
+      setSaveMessage('Profile photo removed!');
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      setSaveMessage('Failed to remove photo.');
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-8 bg-surface custom-scrollbar transition-colors duration-300">
+      <input 
+        type="file" 
+        id="profile-photo-input" 
+        className="hidden" 
+        accept="image/*"
+        onChange={handleFileChange}
+      />
       <div className="max-w-3xl mx-auto space-y-12 pb-20">
         <header className="flex justify-between items-end">
           <div>
@@ -82,22 +129,29 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
           
           <div className="flex flex-col md:flex-row gap-8 items-start">
             <div className="relative group">
-              <div className="w-32 h-32 rounded-3xl overflow-hidden bg-surface-container-highest border-2 border-white/10 group-hover:border-primary transition-all">
-                {localSettings.photoURL ? (
-                  <img 
-                    src={localSettings.photoURL} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
-                    <User size={48} />
-                  </div>
+              <UserAvatar 
+                name={localSettings.name} 
+                photoURL={localSettings.photoURL} 
+                size="lg" 
+                className="group-hover:border-primary transition-all"
+              />
+              <div className="absolute -bottom-2 -right-2 flex gap-2">
+                {localSettings.photoURL && (
+                  <button 
+                    onClick={handleRemovePhoto}
+                    title="Remove Photo"
+                    className="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shadow-lg border-4 border-surface hover:scale-110 transition-transform cursor-pointer"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 )}
-              </div>
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg border-4 border-surface group-hover:scale-110 transition-transform">
-                <Camera size={18} />
+                <button 
+                  onClick={() => document.getElementById('profile-photo-input')?.click()}
+                  title="Upload Photo"
+                  className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg border-4 border-surface hover:scale-110 transition-transform cursor-pointer"
+                >
+                  <Camera size={18} />
+                </button>
               </div>
             </div>
 
@@ -127,20 +181,8 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
                 </div>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Profile Photo URL</label>
-                <div className="relative">
-                  <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
-                  <input 
-                    type="text" 
-                    value={localSettings.photoURL}
-                    onChange={(e) => setLocalSettings({ ...localSettings, photoURL: e.target.value })}
-                    className="w-full bg-surface-container-low border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
-                    placeholder="https://images.unsplash.com/..."
-                  />
-                </div>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Default Location</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Preferred Job Location</label>
+                <p className="text-[10px] text-on-surface-variant italic -mt-1">This location will be automatically suggested when you add new job applications.</p>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
                   <input 
@@ -148,6 +190,7 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
                     value={localSettings.location}
                     onChange={(e) => setLocalSettings({ ...localSettings, location: e.target.value })}
                     className="w-full bg-surface-container-low border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                    placeholder="e.g. Remote, New York, etc."
                   />
                 </div>
               </div>

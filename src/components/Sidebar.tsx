@@ -36,12 +36,15 @@ export default function Sidebar({ activeTab, onTabChange, onSupportClick }: Side
 
   return (
     <aside className="h-screen sticky left-0 w-64 border-r border-white/5 bg-surface flex flex-col py-8 px-4 gap-y-2 z-40">
-      <div className="mb-8 px-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+      <div 
+        onClick={() => onTabChange('Pipeline')}
+        className="mb-8 px-4 flex items-center gap-3 cursor-pointer group"
+      >
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
           <Briefcase className="text-on-primary" size={22} />
         </div>
         <div>
-          <h2 className="text-on-surface font-bold text-lg tracking-tight">Career<span className="text-primary">OS</span></h2>
+          <h2 className="text-on-surface font-bold text-lg tracking-tight group-hover:text-primary transition-colors">Career<span className="text-primary">OS</span></h2>
           <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest">Career Mode</p>
         </div>
       </div>

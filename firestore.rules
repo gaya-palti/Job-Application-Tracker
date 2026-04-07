@@ -13,6 +13,9 @@
 //   - notifications: map (required)
 //     - followUp: bool
 //     - interviewReminder: bool
+//   - columns: list (required)
+//     - id: string
+//     - title: string
 //
 // Collection: users/{uid}/jobs
 // Document ID: {jobId}
@@ -21,7 +24,7 @@
 //   - company: string (required)
 //   - location: string (optional)
 //   - logo: string (optional)
-//   - status: string (required, enum)
+//   - status: string (required)
 //   - description: string (optional)
 //   - requirements: list (optional)
 //   - roadmap: list (optional)
@@ -90,17 +93,18 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['name', 'email', 'location', 'photoURL', 'theme', 'notifications']) &&
+      return hasOnlyAllowedFields(['name', 'email', 'location', 'photoURL', 'theme', 'notifications', 'columns']) &&
              data.email is string && isValidEmail(data.email) &&
              data.theme in ['light', 'dark'] &&
-             data.notifications is map;
+             data.notifications is map &&
+             data.columns is list;
     }
 
     function isValidJob(data) {
       return hasOnlyAllowedFields(['id', 'title', 'company', 'location', 'logo', 'status', 'postedAt', 'salary', 'description', 'requirements', 'roadmap', 'tag', 'codeChallengeLinks', 'interviewNotes', 'resumeId', 'uid']) &&
              data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              data.company is string && data.company.size() > 0 && data.company.size() < 200 &&
-             data.status in ['Bookmarked', 'Applied', 'Technical Assessment', 'Onsite', 'Offers', 'Archived'] &&
+             data.status is string && data.status.size() > 0 &&
              data.uid == request.auth.uid;
     }
 
