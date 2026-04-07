@@ -95,7 +95,7 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
         onChange={handleFileChange}
       />
       <div className="max-w-3xl mx-auto space-y-12 pb-20">
-        <header className="flex justify-between items-end">
+        <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6">
           <div>
             <h1 className="text-2xl font-bold text-on-surface tracking-tight">System Configuration</h1>
             <p className="text-on-surface-variant">Manage your profile, theme, and notification preferences.</p>
@@ -103,7 +103,7 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-primary text-on-primary font-bold px-6 py-3 rounded-xl flex items-center gap-2 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+            className="bg-primary text-on-primary font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 w-full lg:w-auto"
           >
             <Save size={20} />
             {isSaving ? 'Saving...' : 'Save Changes'}
@@ -127,48 +127,48 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
             <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface">Profile Management</h3>
           </div>
           
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="relative group">
+          <div className="flex flex-row md:flex-row gap-4 md:gap-8 items-center md:items-start">
+            <div className="relative group shrink-0">
               <UserAvatar 
                 name={localSettings.name} 
                 photoURL={localSettings.photoURL} 
                 size="lg" 
-                className="group-hover:border-primary transition-all"
+                className="group-hover:border-primary transition-all w-20 h-20 md:w-32 md:h-32"
               />
-              <div className="absolute -bottom-2 -right-2 flex gap-2">
+              <div className="absolute -bottom-1 -right-1 flex gap-1 md:gap-2">
                 {localSettings.photoURL && (
                   <button 
                     onClick={handleRemovePhoto}
                     title="Remove Photo"
-                    className="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shadow-lg border-4 border-surface hover:scale-110 transition-transform cursor-pointer"
+                    className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shadow-lg border-2 md:border-4 border-surface hover:scale-110 transition-transform cursor-pointer"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={14} className="md:size-[18px]" />
                   </button>
                 )}
                 <button 
                   onClick={() => document.getElementById('profile-photo-input')?.click()}
                   title="Upload Photo"
-                  className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg border-4 border-surface hover:scale-110 transition-transform cursor-pointer"
+                  className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg border-2 md:border-4 border-surface hover:scale-110 transition-transform cursor-pointer"
                 >
-                  <Camera size={18} />
+                  <Camera size={14} className="md:size-[18px]" />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div className="flex-1 w-full space-y-4">
+              <div className="space-y-1 md:space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
+                  <User className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
                   <input 
                     type="text" 
                     value={localSettings.name}
                     onChange={(e) => setLocalSettings({ ...localSettings, name: e.target.value })}
-                    className="w-full bg-surface-container-low border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                    className="w-full bg-surface-container-low border border-white/5 rounded-lg md:rounded-xl pl-10 md:pl-12 pr-4 py-2 md:py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="hidden md:block space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
@@ -180,20 +180,34 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
                   />
                 </div>
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Preferred Job Location</label>
-                <p className="text-[10px] text-on-surface-variant italic -mt-1">This location will be automatically suggested when you add new job applications.</p>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
-                  <input 
-                    type="text" 
-                    value={localSettings.location}
-                    onChange={(e) => setLocalSettings({ ...localSettings, location: e.target.value })}
-                    className="w-full bg-surface-container-low border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
-                    placeholder="e.g. Remote, New York, etc."
-                  />
-                </div>
-              </div>
+            </div>
+          </div>
+
+          <div className="md:hidden space-y-2">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
+              <input 
+                type="email" 
+                disabled
+                value={localSettings.email}
+                className="w-full bg-surface-container-low border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-white/50 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Preferred Job Location</label>
+            <p className="text-[10px] text-on-surface-variant italic -mt-1">This location will be automatically suggested when you add new job applications.</p>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
+              <input 
+                type="text" 
+                value={localSettings.location}
+                onChange={(e) => setLocalSettings({ ...localSettings, location: e.target.value })}
+                className="w-full bg-surface-container-low border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                placeholder="e.g. Remote, New York, etc."
+              />
             </div>
           </div>
         </section>

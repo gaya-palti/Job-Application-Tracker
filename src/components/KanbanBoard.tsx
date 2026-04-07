@@ -14,6 +14,7 @@ interface KanbanBoardProps {
   onUpdateColumns: (columns: Column[]) => void;
   onRenameColumn: (columnId: string, newTitle: string) => void;
   onDeleteColumn: (columnId: string) => void;
+  onEditBoard: () => void;
 }
 
 export default function KanbanBoard({ 
@@ -24,9 +25,9 @@ export default function KanbanBoard({
   columns,
   onUpdateColumns,
   onRenameColumn,
-  onDeleteColumn
+  onDeleteColumn,
+  onEditBoard
 }: KanbanBoardProps) {
-  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
@@ -51,10 +52,13 @@ export default function KanbanBoard({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-surface">
       {activeTab !== 'Archive' && (
-        <div className="px-8 py-4 flex justify-end border-b border-white/5">
+        <div className="px-8 py-4 hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5">
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-on-surface-variant font-medium">Manage your pipeline stages and workflow.</p>
+          </div>
           <button
-            onClick={() => setIsManageModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-highest border border-white/10 text-on-surface-variant hover:text-on-surface hover:border-primary/50 transition-all group active:scale-95"
+            onClick={onEditBoard}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-surface-container-highest border border-white/10 text-on-surface-variant hover:text-on-surface hover:border-primary/50 transition-all group active:scale-95"
           >
             <Settings2 size={16} className="group-hover:rotate-45 transition-transform" />
             <span className="text-xs font-bold uppercase tracking-widest">Edit Board</span>
@@ -166,13 +170,6 @@ export default function KanbanBoard({
           </div>
         </div>
       </DragDropContext>
-
-      <ManageColumnsModal 
-        isOpen={isManageModalOpen}
-        onClose={() => setIsManageModalOpen(false)}
-        columns={columns}
-        onSave={onUpdateColumns}
-      />
     </div>
   );
 }

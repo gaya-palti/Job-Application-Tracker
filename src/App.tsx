@@ -9,6 +9,7 @@ import DocumentsScreen from './components/DocumentsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import AuthScreen from './components/AuthScreen';
 import SupportModal from './components/SupportModal';
+import ManageColumnsModal from './components/ManageColumnsModal';
 import GlobalErrorBanner from './components/GlobalErrorBanner';
 import { Job, JobStatus, Document, QuickLink, UserSettings } from './types';
 import { DropResult } from '@hello-pangea/dnd';
@@ -51,6 +52,8 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isManageBoardOpen, setIsManageBoardOpen] = useState(false);
 
   // Auth Listener
   useEffect(() => {
@@ -290,7 +293,7 @@ export default function App() {
     setIsFormOpen(true);
   };
 
-  const handleAddDocument = async (name: string, tag: string) => {
+  const handleAddDocument = async (name: string, tag: string, fileData?: string) => {
     if (!user) return;
     const docId = Math.random().toString(36).substr(2, 9);
     const newDoc: Document = {
@@ -300,6 +303,7 @@ export default function App() {
       version: '1.0',
       tag: tag || 'General',
       url: '#',
+      fileData: fileData || '',
       uploadedAt: new Date().toLocaleDateString(),
       uid: user.uid
     };
@@ -462,6 +466,7 @@ export default function App() {
             onUpdateColumns={(cols) => handleUpdateSettings({ columns: cols })}
             onRenameColumn={handleRenameColumn}
             onDeleteColumn={handleDeleteColumn}
+            onEditBoard={() => setIsManageBoardOpen(true)}
           />
         );
     }
@@ -473,7 +478,13 @@ export default function App() {
         error={globalError} 
         onClear={() => setGlobalError(null)} 
       />
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSupportClick={() => setIsSupportOpen(true)} />
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        onSupportClick={() => setIsSupportOpen(true)} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
       <main className="flex-1 flex flex-col min-w-0 relative h-screen">
         <TopBar 
           onAddJob={openAddForm} 
@@ -481,6 +492,8 @@ export default function App() {
           onTabChange={setActiveTab} 
           settings={settings} 
           jobs={jobs}
+          onMenuClick={() => setIsSidebarOpen(true)}
+          onEditBoard={() => setIsManageBoardOpen(true)}
         />
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {renderContent()}
@@ -506,6 +519,12 @@ export default function App() {
         <SupportModal 
           isOpen={isSupportOpen} 
           onClose={() => setIsSupportOpen(false)} 
+        />
+        <ManageColumnsModal 
+          isOpen={isManageBoardOpen}
+          onClose={() => setIsManageBoardOpen(false)}
+          columns={settings.columns}
+          onSave={(cols) => handleUpdateSettings({ columns: cols })}
         />
       </main>
     </div>

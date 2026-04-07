@@ -18,7 +18,7 @@ export default function UserAvatar({ name, photoURL, size = 'md', className = ''
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
-    lg: 'w-32 h-32 text-3xl',
+    lg: 'w-20 h-20 text-xl md:w-32 md:h-32 md:text-3xl',
   };
 
   if (photoURL) {

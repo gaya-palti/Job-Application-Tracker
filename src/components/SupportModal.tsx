@@ -60,7 +60,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
             </div>
 
             <div className="p-8">
-              <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <button className="p-4 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all flex flex-col gap-3 group">
                   <BookOpen className="text-primary group-hover:scale-110 transition-transform" size={20} />
                   <div className="text-left">
@@ -77,7 +77,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                 </button>
               </div>
 
-              <div className="relative">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/5"></div>
                 </div>
@@ -92,7 +92,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                   <textarea 
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full bg-surface border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all min-h-[120px] resize-none"
+                    className="w-full bg-surface border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all min-h-[160px] resize-none"
                     placeholder="Describe your issue or feedback..."
                     required
                   />
@@ -116,13 +116,12 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               </form>
             </div>
 
-            <div className="p-6 bg-surface/50 border-t border-white/5 flex items-center justify-center gap-6">
-              <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+            <div className="p-6 bg-surface/50 border-t border-white/5 flex flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant whitespace-nowrap">
                 <Mail size={14} />
                 <span>support@careeros.com</span>
               </div>
-              <div className="w-1 h-1 rounded-full bg-white/10" />
-              <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant whitespace-nowrap">
                 <HelpCircle size={14} />
                 <span>Help Center</span>
               </div>

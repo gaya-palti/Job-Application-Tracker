@@ -94,38 +94,40 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
         </div>
 
         {/* Tabs */}
-        <div className="flex px-8 border-b border-white/5 bg-surface-container-low/30">
-          <button 
-            onClick={() => setActiveTab('details')}
-            className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'details' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-white'
-            }`}
-          >
-            Job Details
-          </button>
-          <button 
-            onClick={() => setActiveTab('links')}
-            className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'links' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-white'
-            }`}
-          >
-            Code Challenge Links
-          </button>
-          <button 
-            onClick={() => setActiveTab('notes')}
-            className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'notes' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-white'
-            }`}
-          >
-            Interview Notes
-          </button>
+        <div className="flex px-4 md:px-8 border-b border-white/5 bg-surface-container-low/30 overflow-x-auto scrollbar-hide whitespace-nowrap">
+          <div className="flex px-4 md:px-0">
+            <button 
+              onClick={() => setActiveTab('details')}
+              className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 shrink-0 ${
+                activeTab === 'details' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-white'
+              }`}
+            >
+              Job Details
+            </button>
+            <button 
+              onClick={() => setActiveTab('links')}
+              className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 shrink-0 ${
+                activeTab === 'links' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-white'
+              }`}
+            >
+              Code Challenge Links
+            </button>
+            <button 
+              onClick={() => setActiveTab('notes')}
+              className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 shrink-0 ${
+                activeTab === 'notes' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-white'
+              }`}
+            >
+              Interview Notes
+            </button>
+          </div>
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
           {activeTab === 'details' && (
             <>
-              <section>
+              <section className="px-2 md:px-0">
                 <h3 className="text-xs uppercase font-bold tracking-widest text-on-surface-variant mb-4">Description</h3>
                 <p className="text-on-surface/80 leading-relaxed text-sm">
                   {job.description}
@@ -318,33 +320,35 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
         </div>
 
         {/* Modal Footer */}
-        <div className="p-8 border-t border-white/5 flex gap-4">
+        <div className="p-4 md:p-8 border-t border-white/5 flex flex-col sm:flex-row gap-3">
           <button 
             onClick={() => onUpdateStatus(job.id)}
-            className="flex-1 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-bold py-3 rounded-md active:scale-95 duration-200"
+            className="flex-1 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-bold py-3 rounded-xl active:scale-95 duration-200 shadow-lg shadow-primary/20"
           >
             Update Progress
           </button>
-          <button 
-            onClick={() => onArchive(job.id)}
-            className="px-6 py-3 rounded-md border border-white/10 text-on-surface-variant hover:text-white hover:bg-surface-container-highest transition-colors font-medium"
-          >
-            Archive
-          </button>
-          <button 
-            onClick={() => onEdit(job)}
-            className="px-4 py-3 rounded-md border border-white/10 text-on-surface hover:bg-surface-container-highest transition-colors"
-            title="Edit Application"
-          >
-            <MoreVertical size={20} className="rotate-90" />
-          </button>
-          <button 
-            onClick={handleDelete}
-            className="px-4 py-3 rounded-md border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
-            title="Delete Application"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => onArchive(job.id)}
+              className="flex-1 sm:flex-none px-6 py-3 rounded-xl border border-white/10 text-on-surface-variant hover:text-white hover:bg-surface-container-highest transition-colors font-medium"
+            >
+              Archive
+            </button>
+            <button 
+              onClick={() => onEdit(job)}
+              className="px-4 py-3 rounded-xl border border-white/10 text-on-surface hover:bg-surface-container-highest transition-colors flex items-center justify-center"
+              title="Edit Application"
+            >
+              <MoreVertical size={20} className="rotate-90" />
+            </button>
+            <button 
+              onClick={handleDelete}
+              className="px-4 py-3 rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors flex items-center justify-center"
+              title="Delete Application"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>

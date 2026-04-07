@@ -30,6 +30,7 @@ export interface Document {
   version: string;
   tag: string;
   url: string;
+  fileData?: string;
   uploadedAt: string;
   uid: string;
 }
