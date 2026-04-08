@@ -34,7 +34,7 @@ export default function KanbanBoard({
 
   const displayColumns = activeTab === 'Archive' 
     ? [{ id: 'Archived', title: 'Archive' }]
-    : columns;
+    : columns.filter(col => col.id !== 'Archived' && col.id !== 'Rejected');
 
   const startEditing = (column: Column) => {
     setEditingColumnId(column.id);
@@ -70,7 +70,12 @@ export default function KanbanBoard({
         <div className="flex-1 overflow-x-auto p-8 custom-scrollbar">
           <div className="flex gap-6 min-h-full items-start">
             {displayColumns.map((column) => {
-              const columnJobs = jobs.filter((job) => job.status === column.id);
+              const columnJobs = jobs.filter((job) => {
+                if (activeTab === 'Archive' && column.id === 'Archived') {
+                  return job.status === 'Archived' || job.status === 'Rejected';
+                }
+                return job.status === column.id;
+              });
               return (
                 <div key={column.id} className="flex-none w-72 flex flex-col gap-4">
                   <div className="flex items-center justify-between px-2 relative">

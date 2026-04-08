@@ -28,7 +28,7 @@
 //   - description: string (optional)
 //   - requirements: list (optional)
 //   - roadmap: list (optional)
-//   - resumeId: string (optional)
+//   - websiteUrl: string (optional)
 //   - uid: string (required, matches owner)
 //
 // Collection: users/{uid}/documents
@@ -101,7 +101,7 @@ service cloud.firestore {
     }
 
     function isValidJob(data) {
-      return hasOnlyAllowedFields(['id', 'title', 'company', 'location', 'logo', 'status', 'postedAt', 'salary', 'description', 'requirements', 'roadmap', 'tag', 'codeChallengeLinks', 'interviewNotes', 'resumeId', 'uid']) &&
+      return hasOnlyAllowedFields(['id', 'title', 'company', 'location', 'logo', 'status', 'postedAt', 'salary', 'description', 'requirements', 'roadmap', 'tag', 'codeChallengeLinks', 'interviewNotes', 'websiteUrl', 'uid']) &&
              data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              data.company is string && data.company.size() > 0 && data.company.size() < 200 &&
              data.status is string && data.status.size() > 0 &&

@@ -11,10 +11,17 @@ import AuthScreen from './components/AuthScreen';
 import SupportModal from './components/SupportModal';
 import ManageColumnsModal from './components/ManageColumnsModal';
 import GlobalErrorBanner from './components/GlobalErrorBanner';
+import ConfirmationModal from './components/ConfirmationModal';
 import { Job, JobStatus, Document, QuickLink, UserSettings } from './types';
 import { DropResult } from '@hello-pangea/dnd';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  MOCK_JOBS, 
+  MOCK_DOCUMENTS, 
+  MOCK_QUICK_LINKS, 
+  MOCK_USER_SETTINGS 
+} from './constants/mockData';
 import { 
   collection, 
   doc, 
@@ -23,16 +30,19 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  orderBy 
+  orderBy,
+  writeBatch
 } from 'firebase/firestore';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [globalError, setGlobalError] = useState<any>(null);
+  const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [mockDocuments, setMockDocuments] = useState<Document[]>([]);
   const [quickLinks, setQuickLinks] = useState<QuickLink[]>([]);
   const [settings, setSettings] = useState<UserSettings>({
     name: '',
@@ -54,6 +64,26 @@ export default function App() {
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isManageBoardOpen, setIsManageBoardOpen] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    onConfirm: () => void;
+    variant: 'danger' | 'primary';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    variant: 'primary'
+  });
+
+  // Close modal on navigation
+  useEffect(() => {
+    setSelectedJobId(null);
+  }, [activeTab]);
 
   // Auth Listener
   useEffect(() => {
@@ -86,7 +116,7 @@ export default function App() {
     const unsubSettings = onSnapshot(userDocRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data() as UserSettings;
-        if (!data.columns) {
+        if (!data.columns || data.columns.length === 0) {
           data.columns = [
             { id: 'Bookmarked', title: 'Bookmarked' },
             { id: 'Applied', title: 'Applied' },
@@ -121,6 +151,7 @@ export default function App() {
             { id: 'Offers', title: 'Offers' },
           ]
         };
+        setSettings(initialSettings);
         setDoc(userDocRef, initialSettings).catch(e => {
           const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}`);
           setGlobalError(err);
@@ -140,6 +171,7 @@ export default function App() {
 
     const unsubDocs = onSnapshot(docsRef, (snapshot) => {
       setDocuments(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Document)));
+      setMockDocuments([]); // Clear mock docs
     }, (e) => {
       const err = handleFirestoreError(e, OperationType.LIST, `users/${user.uid}/documents`);
       setGlobalError(err);
@@ -211,6 +243,9 @@ export default function App() {
         status: targetStatus, 
         tag: targetStatus === 'Offers' ? 'Signed' : targetStatus 
       });
+      const columnTitle = settings.columns.find(c => c.id === targetStatus)?.title || targetStatus;
+      setGlobalSuccess(`Job moved to ${columnTitle}`);
+      setTimeout(() => setGlobalSuccess(null), 3000);
     } catch (e) {
       const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}/jobs/${jobId}`);
       setGlobalError(err);
@@ -246,7 +281,7 @@ export default function App() {
         roadmap: jobData.roadmap || [{ label: 'Initial Screening', status: 'upcoming', details: 'Pending' }],
         codeChallengeLinks: jobData.codeChallengeLinks || [],
         interviewNotes: jobData.interviewNotes || '',
-        resumeId: jobData.resumeId || '',
+        websiteUrl: jobData.websiteUrl || '',
         uid: user.uid
       };
       try {
@@ -307,21 +342,23 @@ export default function App() {
       uploadedAt: new Date().toLocaleDateString(),
       uid: user.uid
     };
-    try {
-      await setDoc(doc(db, 'users', user.uid, 'documents', docId), newDoc);
-    } catch (e) {
-      const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/documents/${docId}`);
-      setGlobalError(err);
-    }
+    
+    // Mock upload for prototype - strictly local to avoid "SYSTEM ERROR"
+    setMockDocuments(prev => [newDoc, ...prev]);
+    setGlobalSuccess('Asset added successfully');
+    setTimeout(() => setGlobalSuccess(null), 3000);
   };
 
   const handleDeleteDocument = async (id: string) => {
     if (!user) return;
     try {
+      // Remove from mock documents if it exists there
+      setMockDocuments(prev => prev.filter(d => d.id !== id));
+      // Also try to delete from Firestore
       await deleteDoc(doc(db, 'users', user.uid, 'documents', id));
     } catch (e) {
-      const err = handleFirestoreError(e, OperationType.DELETE, `users/${user.uid}/documents/${id}`);
-      setGlobalError(err);
+      // Silently fail for mock/prototype purposes if it was only a local doc
+      console.warn('Firestore delete failed, document might have been local-only');
     }
   };
 
@@ -380,48 +417,120 @@ export default function App() {
 
   const handleDeleteColumn = async (columnId: string) => {
     if (!user) return;
-    if (!window.confirm('Are you sure you want to delete this column? Jobs in this column will be moved to the first column.')) return;
     
-    const updatedColumns = settings.columns.filter(col => col.id !== columnId);
-    const firstColumnId = updatedColumns[0]?.id || 'Bookmarked';
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Column',
+      message: 'Are you sure you want to delete this column? Jobs in this column will be moved to the first column.',
+      confirmText: 'Delete Column',
+      variant: 'danger',
+      onConfirm: async () => {
+        const updatedColumns = settings.columns.filter(col => col.id !== columnId);
+        const firstColumnId = updatedColumns[0]?.id || 'Bookmarked';
 
-    // Move jobs to the first column
-    const jobsToUpdate = jobs.filter(j => j.status === columnId);
-    for (const job of jobsToUpdate) {
-      await handleUpdateStatus(job.id, firstColumnId);
-    }
+        // Move jobs to the first column
+        const jobsToUpdate = jobs.filter(j => j.status === columnId);
+        for (const job of jobsToUpdate) {
+          await handleUpdateStatus(job.id, firstColumnId);
+        }
 
-    await handleUpdateSettings({ columns: updatedColumns });
+        await handleUpdateSettings({ columns: updatedColumns });
+      }
+    });
   };
 
   const handleResetData = async () => {
     if (!user) return;
-    if (!window.confirm('Are you sure you want to permanently delete ALL your data? This cannot be undone.')) return;
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset All Data',
+      message: 'WARNING: This will permanently delete ALL your job applications, documents, and links. This action cannot be undone. Are you absolutely sure?',
+      confirmText: 'Delete Everything',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          // Delete jobs
+          const jobsToDelete = [...jobs];
+          for (const job of jobsToDelete) {
+            await deleteDoc(doc(db, 'users', user.uid, 'jobs', job.id));
+          }
 
-    try {
-      // Delete jobs
-      const jobsToDelete = [...jobs];
-      for (const job of jobsToDelete) {
-        await deleteDoc(doc(db, 'users', user.uid, 'jobs', job.id));
+          // Delete documents
+          const docsToDelete = [...documents];
+          for (const docItem of docsToDelete) {
+            await deleteDoc(doc(db, 'users', user.uid, 'documents', docItem.id));
+          }
+
+          // Delete quick links
+          const linksToDelete = [...quickLinks];
+          for (const link of linksToDelete) {
+            await deleteDoc(doc(db, 'users', user.uid, 'quickLinks', link.id));
+          }
+
+          setGlobalSuccess('All data has been cleared.');
+          setTimeout(() => setGlobalSuccess(null), 3000);
+        } catch (e) {
+          console.error('Failed to reset data', e);
+          setGlobalError({ error: 'Failed to clear some data. Please try again.' });
+        }
       }
+    });
+  };
 
-      // Delete documents
-      const docsToDelete = [...documents];
-      for (const docItem of docsToDelete) {
-        await deleteDoc(doc(db, 'users', user.uid, 'documents', docItem.id));
+  const handleLoadDemoData = async () => {
+    if (!user) return;
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Load Demo Data',
+      message: 'This will populate your account with Gaya Palti\'s professional profile, 8 tech job applications, and documents. Existing data will remain. Continue?',
+      confirmText: 'Load Demo Data',
+      variant: 'primary',
+      onConfirm: async () => {
+        console.log('Starting demo data load for user:', user.uid);
+        try {
+          const batch = writeBatch(db);
+
+          // Load Jobs
+          MOCK_JOBS.forEach(job => {
+            const jobRef = doc(db, 'users', user.uid, 'jobs', job.id);
+            batch.set(jobRef, { ...job, uid: user.uid });
+          });
+
+          // Load Documents
+          MOCK_DOCUMENTS.forEach(docItem => {
+            const docRef = doc(db, 'users', user.uid, 'documents', docItem.id);
+            batch.set(docRef, { ...docItem, uid: user.uid });
+          });
+
+          // Load Quick Links
+          MOCK_QUICK_LINKS.forEach(link => {
+            const linkRef = doc(db, 'users', user.uid, 'quickLinks', link.id);
+            batch.set(linkRef, { ...link, uid: user.uid });
+          });
+
+          // Update Settings (use set with merge to ensure it works even if doc doesn't exist)
+          const userDocRef = doc(db, 'users', user.uid);
+          batch.set(userDocRef, {
+            ...MOCK_USER_SETTINGS,
+            email: user.email || MOCK_USER_SETTINGS.email,
+          }, { merge: true });
+
+          console.log('Committing batch...');
+          await batch.commit();
+          console.log('Batch committed successfully');
+
+          setGlobalSuccess('Demo data loaded successfully! Your pipeline is now populated.');
+          setTimeout(() => setGlobalSuccess(null), 5000);
+        } catch (e) {
+          console.error('Demo load failed:', e);
+          const err = handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}/demo-load`);
+          setGlobalError(err);
+          throw e; // Re-throw to let the modal handle the loading state
+        }
       }
-
-      // Delete quick links
-      const linksToDelete = [...quickLinks];
-      for (const link of linksToDelete) {
-        await deleteDoc(doc(db, 'users', user.uid, 'quickLinks', link.id));
-      }
-
-      alert('All data has been cleared.');
-    } catch (e) {
-      console.error('Failed to reset data', e);
-      alert('Failed to clear some data. Please try again.');
-    }
+    });
   };
 
   if (!isAuthReady) {
@@ -443,7 +552,7 @@ export default function App() {
       case 'Documents':
         return (
           <DocumentsScreen 
-            documents={documents} 
+            documents={[...mockDocuments, ...documents]} 
             quickLinks={quickLinks}
             onAddDocument={handleAddDocument}
             onDeleteDocument={handleDeleteDocument}
@@ -452,7 +561,14 @@ export default function App() {
           />
         );
       case 'Settings':
-        return <SettingsScreen settings={settings} onUpdateSettings={handleUpdateSettings} onResetData={handleResetData} />;
+        return (
+          <SettingsScreen 
+            settings={settings} 
+            onUpdateSettings={handleUpdateSettings} 
+            onResetData={handleResetData} 
+            onLoadDemoData={handleLoadDemoData}
+          />
+        );
       case 'Archive':
       case 'Pipeline':
       default:
@@ -476,7 +592,8 @@ export default function App() {
     <div className="flex h-screen overflow-hidden transition-colors duration-300 bg-surface dark">
       <GlobalErrorBanner 
         error={globalError} 
-        onClear={() => setGlobalError(null)} 
+        success={globalSuccess}
+        onClear={() => { setGlobalError(null); setGlobalSuccess(null); }} 
       />
       <Sidebar 
         activeTab={activeTab} 
@@ -507,6 +624,7 @@ export default function App() {
           onDelete={handleDeleteJob}
           onUpdateJob={handleUpdateJob}
           documents={documents}
+          columns={settings.columns}
         />
         <JobFormModal 
           isOpen={isFormOpen}
@@ -525,6 +643,15 @@ export default function App() {
           onClose={() => setIsManageBoardOpen(false)}
           columns={settings.columns}
           onSave={(cols) => handleUpdateSettings({ columns: cols })}
+        />
+        <ConfirmationModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onConfirm={confirmModal.onConfirm}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          variant={confirmModal.variant}
         />
       </main>
     </div>

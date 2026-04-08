@@ -42,16 +42,16 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-surface-container-highest border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-surface-container-highest border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <div className="p-8 border-b border-white/5 bg-surface flex items-center justify-between">
+            <div className="p-6 md:p-8 border-b border-white/5 bg-surface flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <HelpCircle className="text-primary" size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-on-surface tracking-tight">Support Center</h3>
-                  <p className="text-sm text-on-surface-variant">How can we help you today?</p>
+                  <h3 className="text-lg md:text-xl font-bold text-on-surface tracking-tight">Support Center</h3>
+                  <p className="text-xs md:text-sm text-on-surface-variant">How can we help you today?</p>
                 </div>
               </div>
               <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
@@ -59,7 +59,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               </button>
             </div>
 
-            <div className="p-8">
+            <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <button className="p-4 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all flex flex-col gap-3 group">
                   <BookOpen className="text-primary group-hover:scale-110 transition-transform" size={20} />
@@ -116,7 +116,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               </form>
             </div>
 
-            <div className="p-6 bg-surface/50 border-t border-white/5 flex flex-row items-center justify-between gap-4">
+            <div className="p-4 md:p-6 bg-surface/50 border-t border-white/5 flex flex-row items-center justify-between gap-4 shrink-0">
               <div className="flex items-center gap-2 text-xs text-on-surface-variant whitespace-nowrap">
                 <Mail size={14} />
                 <span>support@careeros.com</span>

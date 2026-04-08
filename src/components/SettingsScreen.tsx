@@ -14,9 +14,10 @@ interface SettingsScreenProps {
   settings: UserSettings;
   onUpdateSettings: (updates: Partial<UserSettings>) => void;
   onResetData: () => void;
+  onLoadDemoData: () => void;
 }
 
-export default function SettingsScreen({ settings, onUpdateSettings, onResetData }: SettingsScreenProps) {
+export default function SettingsScreen({ settings, onUpdateSettings, onResetData, onLoadDemoData }: SettingsScreenProps) {
   const [localSettings, setLocalSettings] = useState<UserSettings>(settings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -257,6 +258,18 @@ export default function SettingsScreen({ settings, onUpdateSettings, onResetData
                 className="p-3 text-on-surface-variant hover:text-primary transition-colors"
               >
                 <LogOut size={24} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-6 border border-primary/10 rounded-2xl bg-primary/5">
+              <div>
+                <p className="text-sm font-bold text-on-surface">Demo Mode</p>
+                <p className="text-xs text-on-surface-variant">Load realistic mock data for presentation.</p>
+              </div>
+              <button 
+                onClick={onLoadDemoData}
+                className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary-dim transition-all active:scale-95 shadow-lg shadow-primary/20"
+              >
+                Load Demo Data
               </button>
             </div>
             <div className="flex items-center justify-between p-6 border border-primary/10 rounded-2xl bg-primary/5">

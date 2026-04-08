@@ -1,18 +1,20 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertCircle, X, ShieldAlert } from 'lucide-react';
+import { AlertCircle, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { formatFirebaseError } from '../lib/errorUtils';
 
 interface GlobalErrorBannerProps {
   error: any;
+  success?: string | null;
   onClear: () => void;
 }
 
-export default function GlobalErrorBanner({ error, onClear }: GlobalErrorBannerProps) {
-  if (!error) return null;
+export default function GlobalErrorBanner({ error, success, onClear }: GlobalErrorBannerProps) {
+  if (!error && !success) return null;
 
-  const message = formatFirebaseError(error);
-  const isSecurityError = message.includes('Security Error') || message.includes('permission');
+  const message = error ? formatFirebaseError(error) : success;
+  const isSecurityError = error && (message.includes('Security Error') || message.includes('permission'));
+  const isSuccess = !!success && !error;
 
   return (
     <AnimatePresence>
@@ -24,21 +26,21 @@ export default function GlobalErrorBanner({ error, onClear }: GlobalErrorBannerP
       >
         <div className={`
           relative overflow-hidden rounded-2xl border shadow-2xl p-4 flex items-start gap-4
-          ${isSecurityError 
-            ? 'bg-red-500/10 border-red-500/20 text-red-500' 
-            : 'bg-primary/10 border-primary/20 text-primary'}
+          ${isSuccess 
+            ? 'bg-green-500/10 border-green-500/20 text-green-500' 
+            : (isSecurityError ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-primary/10 border-primary/20 text-primary')}
           backdrop-blur-md
         `}>
           <div className={`
             shrink-0 w-10 h-10 rounded-xl flex items-center justify-center
-            ${isSecurityError ? 'bg-red-500/20' : 'bg-primary/20'}
+            ${isSuccess ? 'bg-green-500/20' : (isSecurityError ? 'bg-red-500/20' : 'bg-primary/20')}
           `}>
-            {isSecurityError ? <ShieldAlert size={20} /> : <AlertCircle size={20} />}
+            {isSuccess ? <CheckCircle2 className="text-green-500" size={20} /> : (isSecurityError ? <ShieldAlert size={20} /> : <AlertCircle size={20} />)}
           </div>
           
           <div className="flex-1 pt-1">
             <h4 className="text-xs font-bold uppercase tracking-widest mb-1">
-              {isSecurityError ? 'Security Alert' : 'System Error'}
+              {isSuccess ? 'Success' : (isSecurityError ? 'Security Alert' : 'System Error')}
             </h4>
             <p className="text-sm font-medium leading-relaxed opacity-90">
               {message}

@@ -29,7 +29,7 @@
         "tag": { "type": "string" },
         "codeChallengeLinks": { "type": "array", "items": { "type": "string" } },
         "interviewNotes": { "type": "string" },
-        "resumeId": { "type": "string" },
+        "websiteUrl": { "type": "string" },
         "uid": { "type": "string" }
       },
       "required": ["title", "company", "status", "uid"]

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileCheck, Plus, Trash2, CheckCircle2, Clock, Calendar, Link as LinkIcon, Sparkles, Loader2 } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle2, Clock, Calendar, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Job, JobStatus, Document, Column } from '../types';
-import { extractJobFromUrl } from '../services/jobExtractionService';
 import { formatFirebaseError } from '../lib/errorUtils';
 
 interface JobFormModalProps {
@@ -24,13 +23,10 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
     salary: '',
     requirements: [],
     roadmap: [],
-    resumeId: '',
+    websiteUrl: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [jobUrl, setJobUrl] = useState('');
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -51,40 +47,11 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
         roadmap: [
           { label: 'Initial Screening', status: 'upcoming', details: 'Pending' }
         ],
-        resumeId: '',
+        websiteUrl: '',
       });
     }
     setErrors({});
-    setJobUrl('');
-    setExtractionError(null);
   }, [initialData, isOpen, columns]);
-
-  const handleAutoFill = async () => {
-    if (!jobUrl.trim()) {
-      setExtractionError('Please enter a valid URL');
-      return;
-    }
-
-    setIsExtracting(true);
-    setExtractionError(null);
-
-    try {
-      const extractedData = await extractJobFromUrl(jobUrl);
-      setFormData(prev => ({
-        ...prev,
-        title: extractedData.title,
-        company: extractedData.company,
-        location: extractedData.location,
-        salary: extractedData.salary,
-        description: extractedData.description,
-        requirements: extractedData.requirements,
-      }));
-    } catch (err: any) {
-      setExtractionError(formatFirebaseError(err));
-    } finally {
-      setIsExtracting(false);
-    }
-  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -162,41 +129,6 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
 
           <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8 custom-scrollbar">
-              {/* Auto-fill from URL */}
-              {!initialData && (
-                <div className="bg-surface-container-highest/30 border border-primary/20 rounded-xl p-3 md:p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Sparkles size={14} className="md:size-4" />
-                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">Auto-fill from URL</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={12} md:size-14 />
-                      <input
-                        type="url"
-                        value={jobUrl}
-                        onChange={(e) => setJobUrl(e.target.value)}
-                        className="w-full bg-surface-container-low border border-white/5 rounded-lg pl-8 md:pl-9 pr-4 py-1.5 md:py-2 text-xs md:text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
-                        placeholder="Paste job URL..."
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleAutoFill}
-                      disabled={isExtracting}
-                      className="bg-primary/10 text-primary hover:bg-primary hover:text-on-primary px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50 shrink-0"
-                    >
-                      {isExtracting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                      <span className="hidden sm:inline">{isExtracting ? 'Extracting...' : 'Auto-fill'}</span>
-                      <span className="sm:hidden">{isExtracting ? '...' : 'Fill'}</span>
-                    </button>
-                  </div>
-                  {extractionError && (
-                    <p className="text-[9px] md:text-[10px] text-primary font-bold uppercase tracking-wider">{extractionError}</p>
-                  )}
-                </div>
-              )}
-
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
@@ -388,22 +320,17 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
 
               <div>
                 <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 md:mb-2">
-                  Associated Resume
+                  Job Website / Link
                 </label>
                 <div className="relative">
-                  <FileCheck className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} md:size={18} />
-                  <select
-                    value={formData.resumeId || ''}
-                    onChange={(e) => setFormData({ ...formData, resumeId: e.target.value })}
-                    className="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-10 md:pl-12 pr-4 py-2 md:py-3 text-xs md:text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all appearance-none"
-                  >
-                    <option value="">No resume associated</option>
-                    {documents.filter(d => d.type === 'pdf' || d.type === 'docx').map(doc => (
-                      <option key={doc.id} value={doc.id}>
-                        {doc.name} (v{doc.version})
-                      </option>
-                    ))}
-                  </select>
+                  <LinkIcon className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} md:size={18} />
+                  <input
+                    type="url"
+                    value={formData.websiteUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+                    className="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-10 md:pl-12 pr-4 py-2 md:py-3 text-xs md:text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                    placeholder="https://company.com/careers/job"
+                  />
                 </div>
               </div>
             </div>

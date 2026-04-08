@@ -20,7 +20,26 @@ export default function JobCard({ job, onClick }: JobCardProps) {
     }
   };
 
+  const [imgError, setImgError] = React.useState(false);
+
   const StatusIcon = getStatusIcon();
+
+  const getFallbackLogo = (company: string) => {
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(company)}&backgroundColor=f8fafc&textColor=0f172a&fontSize=45`;
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   const getTagStyles = () => {
     if (job.status === 'Technical Assessment') return 'glow-chip-secondary text-secondary';
@@ -37,9 +56,10 @@ export default function JobCard({ job, onClick }: JobCardProps) {
         <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-white/5 p-1">
           <img
             className="w-full h-full object-contain"
-            src={job.logo}
+            src={imgError ? getFallbackLogo(job.company) : job.logo}
             alt={job.company}
             referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
           />
         </div>
         <StatusIcon
@@ -55,7 +75,7 @@ export default function JobCard({ job, onClick }: JobCardProps) {
       <p className="text-on-surface-variant text-sm mb-4">{job.company}</p>
       
       <div className="flex items-center justify-between">
-        <span className="text-xs text-on-surface-variant">{job.postedAt}</span>
+        <span className="text-xs text-on-surface-variant">{formatDate(job.postedAt)}</span>
         {job.tag && (
           <div className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded ${getTagStyles()}`}>
             {job.tag}

@@ -53,7 +53,7 @@ export default function Sidebar({ activeTab, onTabChange, onSupportClick, isOpen
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
           />
         )}
       </AnimatePresence>
@@ -62,7 +62,9 @@ export default function Sidebar({ activeTab, onTabChange, onSupportClick, isOpen
         fixed inset-y-0 left-0 z-[70] bg-surface border-r border-white/5 flex flex-col py-8 px-4 gap-y-2 transition-all duration-300 
         lg:relative lg:translate-x-0 lg:w-64 lg:z-40
         md:relative md:translate-x-0 md:z-40
-        ${isOpen ? 'w-64 translate-x-0 shadow-2xl' : 'w-64 -translate-x-full md:w-20 md:translate-x-0'}
+        ${isOpen 
+          ? 'w-64 translate-x-0 shadow-2xl' 
+          : 'w-64 -translate-x-full lg:translate-x-0 md:w-20 md:translate-x-0'}
       `}>
         <div className="flex items-center justify-between mb-8 px-4">
           <div 
@@ -77,7 +79,7 @@ export default function Sidebar({ activeTab, onTabChange, onSupportClick, isOpen
               <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest">Career Mode</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-on-surface-variant hover:text-on-surface lg:hidden">
+          <button onClick={onClose} className="p-2 text-on-surface-variant hover:text-on-surface md:hidden">
             <X size={20} />
           </button>
         </div>
@@ -100,7 +102,7 @@ export default function Sidebar({ activeTab, onTabChange, onSupportClick, isOpen
               </span>
               
               {/* Tooltip for collapsed state */}
-              {!isOpen && (
+              {(!isOpen) && (
                 <div className="absolute left-full ml-4 px-2 py-1 bg-surface-container-highest text-on-surface text-[10px] font-bold uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 border border-white/5 lg:hidden">
                   {item.label}
                 </div>

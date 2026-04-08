@@ -19,7 +19,7 @@ export interface Job {
   tag?: string;
   codeChallengeLinks?: string[];
   interviewNotes?: string;
-  resumeId?: string;
+  websiteUrl?: string;
   uid: string;
 }
 

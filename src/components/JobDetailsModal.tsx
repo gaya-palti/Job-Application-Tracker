@@ -1,27 +1,27 @@
 import { useState } from 'react';
-import { X, CheckCircle2, Clock, Calendar, MoreVertical, ExternalLink, FileCheck } from 'lucide-react';
+import { X, CheckCircle2, Clock, Calendar, MoreVertical, ExternalLink, FileCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Job, Document } from '../types';
+import { Job, Document, Column } from '../types';
 
 interface JobDetailsModalProps {
   job: Job | null;
   onClose: () => void;
-  onUpdateStatus: (jobId: string) => void;
+  onUpdateStatus: (jobId: string, newStatus?: string) => void;
   onArchive: (jobId: string) => void;
   onEdit: (job: Job) => void;
   onDelete: (jobId: string) => void;
   onUpdateJob: (jobId: string, updates: Partial<Job>) => void;
   documents?: Document[];
+  columns: Column[];
 }
 
-export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchive, onEdit, onDelete, onUpdateJob, documents = [] }: JobDetailsModalProps) {
+export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchive, onEdit, onDelete, onUpdateJob, documents = [], columns }: JobDetailsModalProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'links' | 'notes'>('details');
   const [isQuickEditing, setIsQuickEditing] = useState(false);
   const [quickEditValue, setQuickEditValue] = useState('');
+  const [isStageSelectorOpen, setIsStageSelectorOpen] = useState(false);
 
   if (!job) return null;
-
-  const associatedResume = documents.find(d => d.id === job.resumeId);
 
   const handleQuickEditStart = () => {
     setIsQuickEditing(true);
@@ -46,6 +46,13 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
       onDelete(job.id);
     }
   };
+
+  const handleStageSelect = (stageId: string) => {
+    onUpdateStatus(job.id, stageId);
+    setIsStageSelectorOpen(false);
+  };
+
+  const currentStatusTitle = columns.find(c => c.id === job.status)?.title || job.status;
 
   return (
     <AnimatePresence>
@@ -83,7 +90,7 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
           
           <div className="flex gap-4">
             <div className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded glow-chip-primary text-primary bg-primary/5">
-              {job.status} Stage
+              {currentStatusTitle} Stage
             </div>
             {job.salary && (
               <div className="text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded bg-surface-container-highest text-on-surface-variant">
@@ -95,7 +102,7 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
 
         {/* Tabs */}
         <div className="flex px-4 md:px-8 border-b border-white/5 bg-surface-container-low/30 overflow-x-auto scrollbar-hide whitespace-nowrap">
-          <div className="flex px-4 md:px-0">
+          <div className="flex px-4 md:px-0 pr-12 md:pr-0">
             <button 
               onClick={() => setActiveTab('details')}
               className={`px-4 py-4 text-sm font-semibold transition-colors border-b-2 shrink-0 ${
@@ -134,22 +141,34 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
                 </p>
               </section>
 
-              {associatedResume && (
+              {job.websiteUrl && (
                 <section>
-                  <h3 className="text-xs uppercase font-bold tracking-widest text-on-surface-variant mb-4">Associated Resume</h3>
+                  <h3 className="text-xs uppercase font-bold tracking-widest text-on-surface-variant mb-4">Job Website</h3>
                   <div className="glass-panel p-4 border border-white/5 rounded-xl flex items-center justify-between group hover:border-primary/30 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
-                        <FileCheck className="text-primary" size={20} />
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+                        <ExternalLink className="text-primary" size={20} />
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-on-surface">{associatedResume.name}</h4>
-                        <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">v{associatedResume.version} • {associatedResume.tag}</p>
+                      <div className="overflow-hidden">
+                        <h4 className="text-sm font-bold text-on-surface truncate">Visit Job Post</h4>
+                        <a 
+                          href={job.websiteUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-[10px] text-primary uppercase font-bold tracking-widest hover:underline truncate block"
+                        >
+                          {job.websiteUrl}
+                        </a>
                       </div>
                     </div>
-                    <button className="text-on-surface-variant hover:text-primary transition-colors">
+                    <a 
+                      href={job.websiteUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-on-surface-variant hover:text-primary transition-colors"
+                    >
                       <ExternalLink size={18} />
-                    </button>
+                    </a>
                   </div>
                 </section>
               )}
@@ -193,7 +212,7 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
           )}
 
           {activeTab === 'links' && (
-            <section>
+            <section className="px-2 md:px-0">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs uppercase font-bold tracking-widest text-on-surface-variant">Code Challenge Links</h3>
                 {!isQuickEditing && (
@@ -262,7 +281,7 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
           )}
 
           {activeTab === 'notes' && (
-            <section>
+            <section className="px-2 md:px-0">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs uppercase font-bold tracking-widest text-on-surface-variant">Interview Notes</h3>
                 {!isQuickEditing && (
@@ -320,10 +339,46 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 md:p-8 border-t border-white/5 flex flex-col sm:flex-row gap-3">
+        <div className="p-4 md:p-8 border-t border-white/5 flex flex-col sm:flex-row gap-3 relative">
+          <AnimatePresence>
+            {isStageSelectorOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-full left-4 right-4 mb-4 glass-panel border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[70]"
+              >
+                <div className="p-4 border-b border-white/5 flex justify-between items-center bg-surface-container-high">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface">Move to Stage</h4>
+                  <button onClick={() => setIsStageSelectorOpen(false)} className="text-on-surface-variant hover:text-white">
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                  {columns.map((col) => (
+                    <button
+                      key={col.id}
+                      onClick={() => handleStageSelect(col.id)}
+                      className={`w-full flex items-center justify-between px-6 py-4 text-sm font-medium transition-all hover:bg-primary/10 group ${
+                        job.status === col.id ? 'text-primary bg-primary/5' : 'text-on-surface/80'
+                      }`}
+                    >
+                      <span>{col.title}</span>
+                      {job.status === col.id ? (
+                        <CheckCircle2 size={16} className="text-primary" />
+                      ) : (
+                        <ChevronRight size={16} className="text-on-surface-variant group-hover:translate-x-1 transition-transform" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <button 
-            onClick={() => onUpdateStatus(job.id)}
-            className="flex-1 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-bold py-3 rounded-xl active:scale-95 duration-200 shadow-lg shadow-primary/20"
+            onClick={() => setIsStageSelectorOpen(!isStageSelectorOpen)}
+            className="flex-1 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-bold py-3 rounded-xl active:scale-95 duration-200 shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
           >
             Update Progress
           </button>
