@@ -1,14 +1,15 @@
 # Job Application Tracker
 
-A modern, AI-assisted job application tracker that helps you organize your job search with a Kanban-style pipeline, analytics dashboard, document vault, and intelligent job data extraction powered by Google Gemini.
+A modern job application tracker that helps you organize your job search with a Kanban-style pipeline, analytics dashboard, and document vault.
 
 Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
+
+**Live app:** [job-application-tracker-533084568852.us-west1.run.app](https://job-application-tracker-533084568852.us-west1.run.app)
 
 ## Features
 
 - **Kanban Pipeline** — Drag-and-drop board to move applications through customizable stages (Bookmarked, Applied, Technical, Onsite, Offers, etc.).
 - **Customizable Columns** — Add, rename, reorder, and delete pipeline columns to match your workflow.
-- **AI Job Extraction** — Paste a job description or URL and let Gemini auto-fill title, company, requirements, and more.
 - **Analytics Dashboard** — Visualize your pipeline funnel, application velocity, and offer rate with interactive charts.
 - **Document Vault** — Store resumes, cover letters, and other assets per application.
 - **Quick Links** — One-click access to your most-used job boards and resources.
@@ -28,7 +29,6 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 | Charts | Recharts |
 | Icons | Lucide |
 | Auth & Database | Firebase Authentication, Cloud Firestore |
-| AI | Google Gemini (`@google/genai`) |
 
 ## Getting Started
 
@@ -36,7 +36,6 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 
 - [Node.js](https://nodejs.org/) 18 or newer
 - A [Firebase](https://firebase.google.com/) project (with Authentication and Firestore enabled)
-- A [Google Gemini API key](https://aistudio.google.com/apikey)
 
 ### Installation
 
@@ -48,22 +47,9 @@ npm install
 
 ### Configuration
 
-1. Copy the example environment file and fill in your values:
+1. Add your Firebase web app config to `firebase-applet-config.json` (or set the corresponding values used in [src/firebase.ts](src/firebase.ts)).
 
-   ```bash
-   cp .env.example .env.local
-   ```
-
-2. Set the following variables in `.env.local`:
-
-   ```env
-   GEMINI_API_KEY="your-gemini-api-key"
-   APP_URL="http://localhost:3000"
-   ```
-
-3. Add your Firebase web app config to `firebase-applet-config.json` (or set the corresponding env vars used in [src/firebase.ts](src/firebase.ts)).
-
-4. Deploy the Firestore security rules in [firestore.rules](firestore.rules) to your Firebase project:
+2. Deploy the Firestore security rules in [firestore.rules](firestore.rules) to your Firebase project:
 
    ```bash
    firebase deploy --only firestore:rules
@@ -115,7 +101,7 @@ npm run preview
 ## Usage
 
 1. **Sign in** with your Google account on the welcome screen.
-2. **Add a job** with the "+" button in the top bar — manually or by pasting a description/URL for AI extraction.
+2. **Add a job** with the "+" button in the top bar and fill in the details.
 3. **Drag cards** between columns as your applications progress.
 4. **Click a card** to view full details, edit, add interview notes, attach documents, or archive.
 5. **Customize your board** via the "Edit Board" action to rename, add, or remove columns.
@@ -131,7 +117,7 @@ npm run build
 firebase deploy --only hosting
 ```
 
-Make sure your production environment provides `GEMINI_API_KEY` and the Firebase config at runtime.
+Make sure your production environment provides the Firebase config at runtime.
 
 ## License
 
