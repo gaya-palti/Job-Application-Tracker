@@ -7,3 +7,6 @@ coverage/
 .env*
 !.env.example
 videos/*
+
+# Local Firebase config (secrets loaded from .env.local instead)
+firebase-applet-config.json

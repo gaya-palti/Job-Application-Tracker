@@ -6,6 +6,14 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 
 **Live app:** [job-application-tracker-533084568852.us-west1.run.app](https://job-application-tracker-533084568852.us-west1.run.app)
 
+## Screenshots
+
+<!-- Add your screenshots below. Drop image files in a `docs/` or `assets/` folder and reference them here. -->
+
+| Kanban Pipeline | Analytics Dashboard |
+| --- | --- |
+| ![Kanban board](docs/screenshot-board.png) | ![Analytics dashboard](docs/screenshot-analytics.png) |
+
 ## Features
 
 - **Kanban Pipeline** — Drag-and-drop board to move applications through customizable stages (Bookmarked, Applied, Technical, Onsite, Offers, etc.).
@@ -15,7 +23,7 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 - **Quick Links** — One-click access to your most-used job boards and resources.
 - **Notifications** — Follow-up and interview reminders.
 - **Cloud Sync** — Real-time sync across devices via Firebase Firestore.
-- **Google Sign-In** — Secure authentication out of the box.
+- **Secure Sign-In** — Google sign-in plus email/password authentication out of the box.
 - **Demo Data** — Load a sample profile and 8 example applications to explore the app instantly.
 
 ## Tech Stack
@@ -47,7 +55,13 @@ npm install
 
 ### Configuration
 
-1. Add your Firebase web app config to `firebase-applet-config.json` (or set the corresponding values used in [src/firebase.ts](src/firebase.ts)).
+1. Copy the example environment file and fill in your own Firebase web app config:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Then set the `VITE_FIREBASE_*` values in `.env.local` from your Firebase project settings (Project settings → General → Your apps → SDK setup). `.env.local` is git-ignored and must never be committed.
 
 2. Deploy the Firestore security rules in [firestore.rules](firestore.rules) to your Firebase project:
 
@@ -89,10 +103,11 @@ npm run preview
 │   ├── constants/         # Mock/demo data
 │   ├── lib/               # Utilities (error handling, helpers)
 │   ├── App.tsx            # Root component, state, Firestore wiring
-│   ├── firebase.ts        # Firebase initialization
+│   ├── firebase.ts        # Firebase initialization (config from env vars)
 │   ├── types.ts           # Shared TypeScript types
 │   └── main.tsx           # Vite entry point
 ├── firestore.rules        # Firestore security rules
+├── .env.example           # Template for Firebase config (copy to .env.local)
 ├── index.html             # Vite HTML entry
 ├── vite.config.ts
 └── package.json
@@ -117,7 +132,7 @@ npm run build
 firebase deploy --only hosting
 ```
 
-Make sure your production environment provides the Firebase config at runtime.
+Make sure your production/CI environment provides the `VITE_FIREBASE_*` values (from your `.env.local`) at **build time**, since Vite inlines them into the bundle.
 
 ## License
 
