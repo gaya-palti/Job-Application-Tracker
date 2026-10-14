@@ -22,6 +22,7 @@ import {
   MOCK_QUICK_LINKS, 
   MOCK_USER_SETTINGS 
 } from './constants/mockData';
+import { DEFAULT_COLUMNS, hasLegacyColumns, migrateColumns, LEGACY_STATUS_MAP } from './constants/columns';
 import { 
   collection, 
   doc, 
@@ -31,7 +32,8 @@ import {
   deleteDoc, 
   query, 
   orderBy,
-  writeBatch
+  writeBatch,
+  getDocs
 } from 'firebase/firestore';
 
 export default function App() {
@@ -117,15 +119,25 @@ export default function App() {
       if (snapshot.exists()) {
         const data = snapshot.data() as UserSettings;
         if (!data.columns || data.columns.length === 0) {
-          data.columns = [
-            { id: 'Bookmarked', title: 'Bookmarked' },
-            { id: 'Applied', title: 'Applied' },
-            { id: 'Technical Assessment', title: 'Technical' },
-            { id: 'Onsite', title: 'Onsite' },
-            { id: 'Offers', title: 'Offers' },
-          ];
+          data.columns = [...DEFAULT_COLUMNS];
           // Update Firestore with default columns if missing
           updateDoc(userDocRef, { columns: data.columns }).catch(e => {
+            const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}`);
+            setGlobalError(err);
+          });
+        } else if (hasLegacyColumns(data.columns)) {
+          // Move accounts still on the original board to the new stages, carrying jobs along.
+          data.columns = migrateColumns(data.columns);
+          (async () => {
+            const batch = writeBatch(db);
+            const jobsSnap = await getDocs(jobsRef);
+            jobsSnap.docs.forEach(jobDoc => {
+              const newStatus = LEGACY_STATUS_MAP[jobDoc.data().status];
+              if (newStatus) batch.update(jobDoc.ref, { status: newStatus });
+            });
+            batch.update(userDocRef, { columns: data.columns });
+            await batch.commit();
+          })().catch(e => {
             const err = handleFirestoreError(e, OperationType.UPDATE, `users/${user.uid}`);
             setGlobalError(err);
           });
@@ -143,13 +155,7 @@ export default function App() {
             followUp: true,
             interviewReminder: true,
           },
-          columns: [
-            { id: 'Bookmarked', title: 'Bookmarked' },
-            { id: 'Applied', title: 'Applied' },
-            { id: 'Technical Assessment', title: 'Technical' },
-            { id: 'Onsite', title: 'Onsite' },
-            { id: 'Offers', title: 'Offers' },
-          ]
+          columns: [...DEFAULT_COLUMNS]
         };
         setSettings(initialSettings);
         setDoc(userDocRef, initialSettings).catch(e => {
@@ -273,7 +279,7 @@ export default function App() {
         location: jobData.location || 'Remote',
         salary: jobData.salary || '',
         logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDSV2Uc_w_e0n55SC1yBA6DW5tOwF6ZfF0xiSCSiUoWq5yLSaW4WiVIU9lEpZaBUKdBrDsJXBrxlsh0Y_i6KhV-HcdUB9shGePq-tr4EgpnOAdu9NyBAXIImgzoVViB6qN7PcfKV3c6xYEY3yIkoR0yh7sIapIvl3p9_SQktugg3UgCKuqrHBEumHsFz_vclvRXGsOgT2i4STc1aNhZnqBquYN3fT7BuB1pNGNvnXjE8xEEOkhDYtC4Al0TTdV5cnEtSshqhKpVSYnI',
-        status: jobData.status || 'Bookmarked',
+        status: jobData.status || DEFAULT_COLUMNS[0].id,
         postedAt: new Date().toISOString(),
         tag: jobData.status === 'Offers' ? 'Signed' : 'New',
         description: jobData.description || '',
@@ -282,6 +288,8 @@ export default function App() {
         codeChallengeLinks: jobData.codeChallengeLinks || [],
         interviewNotes: jobData.interviewNotes || '',
         websiteUrl: jobData.websiteUrl || '',
+        contactName: jobData.contactName || '',
+        contactInfo: jobData.contactInfo || '',
         uid: user.uid
       };
       try {
@@ -426,7 +434,7 @@ export default function App() {
       variant: 'danger',
       onConfirm: async () => {
         const updatedColumns = settings.columns.filter(col => col.id !== columnId);
-        const firstColumnId = updatedColumns[0]?.id || 'Bookmarked';
+        const firstColumnId = updatedColumns[0]?.id || DEFAULT_COLUMNS[0].id;
 
         // Move jobs to the first column
         const jobsToUpdate = jobs.filter(j => j.status === columnId);

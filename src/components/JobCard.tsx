@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bookmark, Mail, Code, Users, PartyPopper } from 'lucide-react';
+import { Bookmark, Mail, Code, Users, PartyPopper, User, Phone, Handshake } from 'lucide-react';
 import { Job } from '../types';
 
 interface JobCardProps {
@@ -11,10 +11,12 @@ interface JobCardProps {
 export default function JobCard({ job, onClick }: JobCardProps) {
   const getStatusIcon = () => {
     switch (job.status) {
-      case 'Bookmarked': return Bookmark;
+      case 'Referral Requested': return Handshake;
       case 'Applied': return Mail;
-      case 'Technical Assessment': return Code;
-      case 'Onsite': return Users;
+      case 'Screening Call': return Phone;
+      case 'Home Assignment': return Code;
+      case 'Technical Interview': return Code;
+      case 'HR Interview': return Users;
       case 'Offers': return PartyPopper;
       default: return Bookmark;
     }
@@ -23,6 +25,7 @@ export default function JobCard({ job, onClick }: JobCardProps) {
   const [imgError, setImgError] = React.useState(false);
 
   const StatusIcon = getStatusIcon();
+  const isTechnical = job.status === 'Home Assignment' || job.status === 'Technical Interview';
 
   const getFallbackLogo = (company: string) => {
     return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(company)}&backgroundColor=f8fafc&textColor=0f172a&fontSize=45`;
@@ -42,7 +45,7 @@ export default function JobCard({ job, onClick }: JobCardProps) {
   };
 
   const getTagStyles = () => {
-    if (job.status === 'Technical Assessment') return 'glow-chip-secondary text-secondary';
+    if (isTechnical) return 'glow-chip-secondary text-secondary';
     if (job.status === 'Offers') return 'glow-chip-tertiary text-tertiary';
     return 'glow-chip-primary text-primary';
   };
@@ -65,14 +68,20 @@ export default function JobCard({ job, onClick }: JobCardProps) {
         <StatusIcon
           size={18}
           className={`transition-colors ${
-            job.status === 'Technical Assessment' ? 'text-secondary' : 
+            isTechnical ? 'text-secondary' : 
             job.status === 'Offers' ? 'text-tertiary' : 'text-on-surface-variant group-hover:text-primary'
           }`}
         />
       </div>
       
       <h4 className="text-on-surface font-semibold mb-1 leading-tight">{job.title}</h4>
-      <p className="text-on-surface-variant text-sm mb-4">{job.company}</p>
+      <p className={`text-on-surface-variant text-sm ${job.contactName ? 'mb-2' : 'mb-4'}`}>{job.company}</p>
+      {job.contactName && (
+        <p className="flex items-center gap-1.5 text-xs text-on-surface-variant mb-4 truncate">
+          <User size={12} className="shrink-0" />
+          <span className="truncate">via {job.contactName}</span>
+        </p>
+      )}
       
       <div className="flex items-center justify-between">
         <span className="text-xs text-on-surface-variant">{formatDate(job.postedAt)}</span>

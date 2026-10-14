@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, CheckCircle2, Clock, Calendar, MoreVertical, ExternalLink, FileCheck, ChevronRight } from 'lucide-react';
+import { X, CheckCircle2, Clock, Calendar, MoreVertical, ExternalLink, FileCheck, ChevronRight, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Job, Document, Column } from '../types';
 
@@ -140,6 +140,21 @@ export default function JobDetailsModal({ job, onClose, onUpdateStatus, onArchiv
                   {job.description}
                 </p>
               </section>
+
+              {(job.contactName || job.contactInfo) && (
+                <section>
+                  <h3 className="text-xs uppercase font-bold tracking-widest text-on-surface-variant mb-4">Applied Through</h3>
+                  <div className="glass-panel p-4 border border-white/5 rounded-xl flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+                      <User className="text-primary" size={20} />
+                    </div>
+                    <div className="overflow-hidden">
+                      {job.contactName && <h4 className="text-sm font-bold text-on-surface truncate">{job.contactName}</h4>}
+                      {job.contactInfo && <p className="text-xs text-on-surface-variant break-all">{job.contactInfo}</p>}
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {job.websiteUrl && (
                 <section>

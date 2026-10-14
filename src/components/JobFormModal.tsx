@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, CheckCircle2, Clock, Calendar, Link as LinkIcon } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle2, Clock, Calendar, Link as LinkIcon, Sparkles, Loader2, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Job, JobStatus, Document, Column } from '../types';
 import { formatFirebaseError } from '../lib/errorUtils';
+import { extractJobFromUrl, extractJobFromText } from '../services/jobExtractionService';
+import { DEFAULT_COLUMNS } from '../constants/columns';
 
 interface JobFormModalProps {
   isOpen: boolean;
@@ -19,14 +21,20 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
     company: '',
     location: '',
     description: '',
-    status: columns[0]?.id || 'Bookmarked',
+    status: columns[0]?.id || DEFAULT_COLUMNS[0].id,
     salary: '',
     requirements: [],
     roadmap: [],
     websiteUrl: '',
+    contactName: '',
+    contactInfo: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [autoFillMode, setAutoFillMode] = useState<'url' | 'text'>('url');
+  const [autoFillInput, setAutoFillInput] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -41,17 +49,58 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
         company: '',
         location: '',
         description: '',
-        status: columns[0]?.id || 'Bookmarked',
+        status: columns[0]?.id || DEFAULT_COLUMNS[0].id,
         salary: '',
         requirements: [],
         roadmap: [
           { label: 'Initial Screening', status: 'upcoming', details: 'Pending' }
         ],
         websiteUrl: '',
+        contactName: '',
+        contactInfo: '',
       });
     }
     setErrors({});
+    setAutoFillInput('');
+    setExtractionError(null);
   }, [initialData, isOpen, columns]);
+
+  const handleAutoFill = async () => {
+    const input = autoFillInput.trim();
+    if (!input) {
+      setExtractionError(autoFillMode === 'url' ? 'Paste a job posting URL first' : 'Paste the job posting text first');
+      return;
+    }
+    if (autoFillMode === 'url' && !/^https?:\/\//i.test(input)) {
+      setExtractionError('URL must start with http:// or https://');
+      return;
+    }
+
+    setIsExtracting(true);
+    setExtractionError(null);
+
+    try {
+      const extracted = autoFillMode === 'url'
+        ? await extractJobFromUrl(input)
+        : await extractJobFromText(input);
+      setFormData(prev => ({
+        ...prev,
+        title: extracted.title,
+        company: extracted.company,
+        location: extracted.location,
+        salary: extracted.salary || '',
+        description: extracted.description,
+        requirements: extracted.requirements || [],
+        websiteUrl: autoFillMode === 'url' ? input : prev.websiteUrl,
+      }));
+      setErrors({});
+    } catch (err: any) {
+      console.error('Auto-fill failed', err);
+      setExtractionError(err?.message || 'Failed to extract job details');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -129,6 +178,66 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
 
           <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8 custom-scrollbar">
+              {/* AI Auto-fill */}
+              {!initialData && (
+                <div className="bg-surface-container-highest/30 border border-primary/20 rounded-xl p-3 md:p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Sparkles size={16} />
+                      <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">AI Auto-fill</span>
+                    </div>
+                    <div className="flex bg-surface-container-low rounded-lg p-0.5 border border-white/5">
+                      {(['url', 'text'] as const).map(mode => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => { setAutoFillMode(mode); setAutoFillInput(''); setExtractionError(null); }}
+                          className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                            autoFillMode === mode ? 'bg-primary/15 text-primary' : 'text-on-surface-variant hover:text-on-surface'
+                          }`}
+                        >
+                          {mode === 'url' ? 'Link' : 'Text'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {autoFillMode === 'url' ? (
+                      <div className="relative flex-1">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={14} />
+                        <input
+                          type="url"
+                          value={autoFillInput}
+                          onChange={(e) => setAutoFillInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAutoFill(); } }}
+                          className="w-full bg-surface-container-low border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                          placeholder="Paste a job posting link"
+                        />
+                      </div>
+                    ) : (
+                      <textarea
+                        value={autoFillInput}
+                        onChange={(e) => setAutoFillInput(e.target.value)}
+                        className="flex-1 bg-surface-container-low border border-white/5 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all h-24 resize-none"
+                        placeholder="Paste the full job posting text (useful for LinkedIn)"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleAutoFill}
+                      disabled={isExtracting}
+                      className="bg-primary/10 text-primary hover:bg-primary hover:text-on-primary px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 sm:self-start"
+                    >
+                      {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                      {isExtracting ? 'Reading...' : 'Auto-fill'}
+                    </button>
+                  </div>
+                  {extractionError && (
+                    <p className="text-[10px] text-primary font-bold uppercase tracking-wider">{extractionError}</p>
+                  )}
+                </div>
+              )}
+
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
@@ -197,6 +306,35 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
                     onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                     className="w-full bg-surface-container-highest border border-white/5 rounded-lg px-3 md:px-4 py-2 md:py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
                     placeholder="e.g. $120k - $150k"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 md:mb-2">
+                    Applied Through (Contact)
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+                    <input
+                      type="text"
+                      value={formData.contactName || ''}
+                      onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                      className="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-10 md:pl-12 pr-4 py-2 md:py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                      placeholder="e.g. Dana Cohen (referral)"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 md:mb-2">
+                    Contact Details
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.contactInfo || ''}
+                    onChange={(e) => setFormData({ ...formData, contactInfo: e.target.value })}
+                    className="w-full bg-surface-container-highest border border-white/5 rounded-lg px-3 md:px-4 py-2 md:py-3 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                    placeholder="Email, phone, or LinkedIn profile"
                   />
                 </div>
               </div>

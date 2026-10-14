@@ -20,6 +20,8 @@ export interface Job {
   codeChallengeLinks?: string[];
   interviewNotes?: string;
   websiteUrl?: string;
+  contactName?: string;
+  contactInfo?: string;
   uid: string;
 }
 

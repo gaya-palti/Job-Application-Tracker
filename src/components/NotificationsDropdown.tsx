@@ -12,7 +12,7 @@ interface NotificationsDropdownProps {
 export default function NotificationsDropdown({ isOpen, onClose, jobs }: NotificationsDropdownProps) {
   // Derive some "notifications" from jobs
   const notifications = jobs
-    .filter(job => job.status === 'Applied' || job.status === 'Technical Assessment')
+    .filter(job => job.status === 'Applied' || job.status === 'Home Assignment')
     .slice(0, 5)
     .map(job => ({
       id: job.id,

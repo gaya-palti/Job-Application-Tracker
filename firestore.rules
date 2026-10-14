@@ -29,6 +29,8 @@
 //   - requirements: list (optional)
 //   - roadmap: list (optional)
 //   - websiteUrl: string (optional)
+//   - contactName: string (optional)
+//   - contactInfo: string (optional)
 //   - uid: string (required, matches owner)
 //
 // Collection: users/{uid}/documents
@@ -101,7 +103,7 @@ service cloud.firestore {
     }
 
     function isValidJob(data) {
-      return hasOnlyAllowedFields(['id', 'title', 'company', 'location', 'logo', 'status', 'postedAt', 'salary', 'description', 'requirements', 'roadmap', 'tag', 'codeChallengeLinks', 'interviewNotes', 'websiteUrl', 'uid']) &&
+      return hasOnlyAllowedFields(['id', 'title', 'company', 'location', 'logo', 'status', 'postedAt', 'salary', 'description', 'requirements', 'roadmap', 'tag', 'codeChallengeLinks', 'interviewNotes', 'websiteUrl', 'contactName', 'contactInfo', 'uid']) &&
              data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              data.company is string && data.company.size() > 0 && data.company.size() < 200 &&
              data.status is string && data.status.size() > 0 &&
