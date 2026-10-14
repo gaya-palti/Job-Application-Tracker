@@ -5,6 +5,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { motion } from 'motion/react';
 import { Briefcase, Mail, Lock, LogIn, UserPlus, Chrome, AlertCircle } from 'lucide-react';
 import { UserSettings } from '../types';
+import { DEFAULT_COLUMNS } from '../constants/columns';
 import { formatFirebaseError } from '../lib/errorUtils';
 
 export default function AuthScreen() {
@@ -33,13 +34,7 @@ export default function AuthScreen() {
             followUp: true,
             interviewReminder: true,
           },
-          columns: [
-            { id: 'Bookmarked', title: 'Bookmarked' },
-            { id: 'Applied', title: 'Applied' },
-            { id: 'Technical Assessment', title: 'Technical' },
-            { id: 'Onsite', title: 'Onsite' },
-            { id: 'Offers', title: 'Offers' },
-          ]
+          columns: [...DEFAULT_COLUMNS]
         };
         await setDoc(userDocRef, initialSettings);
       }
@@ -73,13 +68,7 @@ export default function AuthScreen() {
             followUp: true,
             interviewReminder: true,
           },
-          columns: [
-            { id: 'Bookmarked', title: 'Bookmarked' },
-            { id: 'Applied', title: 'Applied' },
-            { id: 'Technical Assessment', title: 'Technical' },
-            { id: 'Onsite', title: 'Onsite' },
-            { id: 'Offers', title: 'Offers' },
-          ]
+          columns: [...DEFAULT_COLUMNS]
         };
         await setDoc(userDocRef, initialSettings);
       }

@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, Legend, FunnelChart, Funnel, LabelList 
 } from 'recharts';
 import { Job, JobStatus } from '../types';
+import { INTERVIEW_STATUSES } from '../constants/columns';
 import { motion } from 'motion/react';
 import { TrendingUp, Target, XCircle, Clock } from 'lucide-react';
 import { MOCK_ANALYTICS, MOCK_JOBS } from '../constants/mockData';
@@ -17,24 +18,24 @@ const COLORS = ['#00E5FF', '#7C4DFF', '#FF4081', '#FFD600', '#00C853'];
 export default function AnalyticsScreen({ jobs }: AnalyticsScreenProps) {
   // KPI Calculations
   const totalApplications = jobs.length;
-  const activeInterviews = jobs.filter(j => ['Technical Assessment', 'Onsite'].includes(j.status)).length;
+  const activeInterviews = jobs.filter(j => INTERVIEW_STATUSES.includes(j.status)).length;
   const rejections = jobs.filter(j => j.status === 'Rejected' || j.status === 'Archived').length;
   const offers = jobs.filter(j => j.status === 'Offers').length;
   
   // Funnel Data
   const funnelData = [
     { value: totalApplications, name: 'Total Applications', fill: '#00E5FF' },
-    { value: jobs.filter(j => j.status !== 'Bookmarked').length, name: 'Applied', fill: '#7C4DFF' },
+    { value: jobs.filter(j => j.status !== 'Referral Requested').length, name: 'Applied', fill: '#7C4DFF' },
     { value: activeInterviews + offers, name: 'Interviewing', fill: '#FF4081' },
     { value: offers, name: 'Offers', fill: '#00C853' },
   ];
 
   // Time Metrics (Mocked for now as we don't have real timestamps for stage changes)
   const timeData = [
-    { stage: 'Bookmarked', days: 2 },
+    { stage: 'Referral', days: 2 },
     { stage: 'Applied', days: 5 },
-    { stage: 'Technical', days: 7 },
-    { stage: 'Onsite', days: 10 },
+    { stage: 'Screening', days: 7 },
+    { stage: 'Interviews', days: 10 },
     { stage: 'Offer', days: 14 },
   ];
 

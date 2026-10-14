@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Job, JobStatus, Document, Column } from '../types';
 import { formatFirebaseError } from '../lib/errorUtils';
 import { extractJobFromUrl, extractJobFromText } from '../services/jobExtractionService';
+import { DEFAULT_COLUMNS } from '../constants/columns';
 
 interface JobFormModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
     company: '',
     location: '',
     description: '',
-    status: columns[0]?.id || 'Bookmarked',
+    status: columns[0]?.id || DEFAULT_COLUMNS[0].id,
     salary: '',
     requirements: [],
     roadmap: [],
@@ -48,7 +49,7 @@ export default function JobFormModal({ isOpen, onClose, onSave, initialData, doc
         company: '',
         location: '',
         description: '',
-        status: columns[0]?.id || 'Bookmarked',
+        status: columns[0]?.id || DEFAULT_COLUMNS[0].id,
         salary: '',
         requirements: [],
         roadmap: [

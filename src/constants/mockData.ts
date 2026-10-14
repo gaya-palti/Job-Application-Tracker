@@ -1,4 +1,5 @@
 import { Job, Document, QuickLink, UserSettings } from '../types';
+import { DEFAULT_COLUMNS } from './columns';
 
 export const MOCK_USER_SETTINGS: UserSettings = {
   name: 'Gaya Palti',
@@ -11,11 +12,7 @@ export const MOCK_USER_SETTINGS: UserSettings = {
     interviewReminder: true,
   },
   columns: [
-    { id: 'Bookmarked', title: 'Bookmarked' },
-    { id: 'Applied', title: 'Applied' },
-    { id: 'Technical Assessment', title: 'Technical' },
-    { id: 'Onsite', title: 'Onsite' },
-    { id: 'Offers', title: 'Offers' },
+    ...DEFAULT_COLUMNS,
     { id: 'Rejected', title: 'Rejected' },
     { id: 'Archived', title: 'Archived' },
   ],
@@ -46,7 +43,7 @@ export const MOCK_JOBS: Job[] = [
     company: 'Meta',
     location: 'Tel Aviv, Israel',
     logo: 'https://www.google.com/s2/favicons?domain=meta.com&sz=128',
-    status: 'Technical Assessment',
+    status: 'Home Assignment',
     postedAt: '2026-03-20T14:30:00Z',
     salary: '₪45k - ₪55k / month',
     description: 'We are looking for a Full Stack Engineer to join the Instagram Reels team. You will work on high-impact features used by billions of people. The role involves working with React on the frontend and Hack/PHP on the backend.\n\nFocus on performance optimization and building intuitive user experiences at scale.',
@@ -65,7 +62,7 @@ export const MOCK_JOBS: Job[] = [
     company: 'Claroty',
     location: 'Tel Aviv, Israel',
     logo: 'https://www.google.com/s2/favicons?domain=claroty.com&sz=128',
-    status: 'Onsite',
+    status: 'Technical Interview',
     postedAt: '2026-03-10T09:00:00Z',
     salary: '₪38k - ₪48k / month',
     description: 'Claroty is looking for a Backend Developer to join our core security team. You will build the infrastructure that protects industrial networks (ICS/OT) from cyber threats. Tech stack includes Python, PostgreSQL, and Docker.\n\nDeep dive into network protocols and security research.',
@@ -84,7 +81,7 @@ export const MOCK_JOBS: Job[] = [
     company: 'Monday.com',
     location: 'Tel Aviv, Israel',
     logo: 'https://www.google.com/s2/favicons?domain=monday.com&sz=128',
-    status: 'Bookmarked',
+    status: 'Referral Requested',
     postedAt: '2026-04-05T11:20:00Z',
     salary: '₪25k - ₪32k / month',
     description: 'Help us make data-driven decisions at Monday.com. You will analyze user behavior, build dashboards in Looker, and work closely with product managers to optimize our growth funnel.\n\nStrong SQL skills and experience with Python/R for data analysis are essential.',
@@ -137,7 +134,7 @@ export const MOCK_JOBS: Job[] = [
     company: 'Monday.com',
     location: 'Tel Aviv, Israel',
     logo: 'https://www.google.com/s2/favicons?domain=monday.com&sz=128',
-    status: 'Bookmarked',
+    status: 'Referral Requested',
     postedAt: '2026-04-07T10:00:00Z',
     salary: '₪30k - ₪40k / month',
     description: 'Join the data science team at Monday.com to build predictive models and improve our product experience. You will work with large datasets and use machine learning to solve complex problems.\n\nExperience with Python, SQL, and ML frameworks is required.',
