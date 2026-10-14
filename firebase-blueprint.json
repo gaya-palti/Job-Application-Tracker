@@ -30,6 +30,8 @@
         "codeChallengeLinks": { "type": "array", "items": { "type": "string" } },
         "interviewNotes": { "type": "string" },
         "websiteUrl": { "type": "string" },
+        "contactName": { "type": "string" },
+        "contactInfo": { "type": "string" },
         "uid": { "type": "string" }
       },
       "required": ["title", "company", "status", "uid"]

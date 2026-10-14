@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bookmark, Mail, Code, Users, PartyPopper } from 'lucide-react';
+import { Bookmark, Mail, Code, Users, PartyPopper, User } from 'lucide-react';
 import { Job } from '../types';
 
 interface JobCardProps {
@@ -72,7 +72,13 @@ export default function JobCard({ job, onClick }: JobCardProps) {
       </div>
       
       <h4 className="text-on-surface font-semibold mb-1 leading-tight">{job.title}</h4>
-      <p className="text-on-surface-variant text-sm mb-4">{job.company}</p>
+      <p className={`text-on-surface-variant text-sm ${job.contactName ? 'mb-2' : 'mb-4'}`}>{job.company}</p>
+      {job.contactName && (
+        <p className="flex items-center gap-1.5 text-xs text-on-surface-variant mb-4 truncate">
+          <User size={12} className="shrink-0" />
+          <span className="truncate">via {job.contactName}</span>
+        </p>
+      )}
       
       <div className="flex items-center justify-between">
         <span className="text-xs text-on-surface-variant">{formatDate(job.postedAt)}</span>

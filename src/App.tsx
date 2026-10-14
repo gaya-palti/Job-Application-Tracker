@@ -282,6 +282,8 @@ export default function App() {
         codeChallengeLinks: jobData.codeChallengeLinks || [],
         interviewNotes: jobData.interviewNotes || '',
         websiteUrl: jobData.websiteUrl || '',
+        contactName: jobData.contactName || '',
+        contactInfo: jobData.contactInfo || '',
         uid: user.uid
       };
       try {
