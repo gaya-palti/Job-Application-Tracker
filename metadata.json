@@ -1,5 +1,8 @@
 {
   "name": "Job Application Tracker",
-  "description": "",
-  "requestFramePermissions": []
+  "description": "Smart pipeline and job tracking application with AI job extraction",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
