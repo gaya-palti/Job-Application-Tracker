@@ -6,6 +6,13 @@ import { GoogleGenAI, Type } from '@google/genai';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Locally, load GEMINI_API_KEY from .env.local. On AI Studio / Cloud Run it comes from the environment.
+try {
+  process.loadEnvFile('.env.local');
+} catch {
+  // No .env.local (e.g. in production) — rely on the real environment.
+}
+
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 

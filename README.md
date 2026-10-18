@@ -1,10 +1,10 @@
 # Job Application Tracker
 
-A modern job application tracker that helps you organize your job search with a Kanban-style pipeline, analytics dashboard, and document vault.
+A modern job application tracker that helps you organize your job search with a Kanban-style pipeline, AI auto-fill from job postings, an analytics dashboard, and a document vault.
 
-Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
+Built with React 19, TypeScript, Vite, Tailwind CSS, Express, Firebase, and Google Gemini.
 
-**Live app:** [job-application-tracker-533084568852.us-west1.run.app](https://job-application-tracker-533084568852.us-west1.run.app)
+**Live app:** [job-application-tracker-6293.ai.studio](https://job-application-tracker-6293.ai.studio/)
 
 ## Screenshots
 
@@ -16,7 +16,9 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 
 ## Features
 
-- **Kanban Pipeline** — Drag-and-drop board to move applications through customizable stages (Bookmarked, Applied, Technical, Onsite, Offers, etc.).
+- **Kanban Pipeline** — Drag-and-drop board to move applications through customizable stages (Referral Requested, Applied, Screening Call, Home Assignment, Technical Interview, HR Interview, Offer).
+- **AI Auto-fill** — Paste a job posting link (or its text, for sites like LinkedIn that block fetching) and Gemini fills in the title, company, location, salary, requirements, and a short summary.
+- **Referral Contact** — Record who you applied through (name and contact details), shown on the card and in the job details.
 - **Customizable Columns** — Add, rename, reorder, and delete pipeline columns to match your workflow.
 - **Analytics Dashboard** — Visualize your pipeline funnel, application velocity, and offer rate with interactive charts.
 - **Document Vault** — Store resumes, cover letters, and other assets per application.
@@ -36,6 +38,8 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 | Animations | Motion |
 | Charts | Recharts |
 | Icons | Lucide |
+| Backend | Express (serves the app and the `/api/extract-job` endpoint) |
+| AI | Google Gemini (`@google/genai`) with the URL context tool |
 | Auth & Database | Firebase Authentication, Cloud Firestore |
 
 ## Getting Started
@@ -44,6 +48,7 @@ Built with React 19, TypeScript, Vite, Tailwind CSS, and Firebase.
 
 - [Node.js](https://nodejs.org/) 18 or newer
 - A [Firebase](https://firebase.google.com/) project (with Authentication and Firestore enabled)
+- A [Gemini API key](https://aistudio.google.com/apikey) for AI auto-fill (the free tier is enough)
 
 ### Installation
 
@@ -61,13 +66,15 @@ npm install
    cp .env.example .env.local
    ```
 
-   Then set the `VITE_FIREBASE_*` values in `.env.local` from your Firebase project settings (Project settings → General → Your apps → SDK setup). `.env.local` is git-ignored and must never be committed.
+   Then set the `VITE_FIREBASE_*` values in `.env.local` from your Firebase project settings (Project settings → General → Your apps → SDK setup), and set `GEMINI_API_KEY` to your Gemini API key. `.env.local` is git-ignored and must never be committed. The Gemini key is only read by the server and never reaches the browser.
 
-2. Deploy the Firestore security rules in [firestore.rules](firestore.rules) to your Firebase project:
+2. Publish the Firestore security rules in [firestore.rules](firestore.rules) to your Firebase project, either with the Firebase CLI or by pasting them into Firebase Console → Firestore → (your database) → Rules:
 
    ```bash
    firebase deploy --only firestore:rules
    ```
+
+3. In Firebase Console → Authentication → Settings → Authorized domains, make sure `localhost` and your deployed domain are listed, or Google sign-in will fail.
 
 ### Run Locally
 
@@ -75,22 +82,23 @@ npm install
 npm run dev
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000).
+This starts the Express server with Vite in middleware mode. The app will be available at [http://localhost:3000](http://localhost:3000).
 
 ### Build for Production
 
 ```bash
 npm run build
-npm run preview
+NODE_ENV=production npm start
 ```
 
 ## Available Scripts
 
 | Script | Description |
 | --- | --- |
-| `npm run dev` | Start the Vite dev server on port 3000 |
+| `npm run dev` | Start the Express + Vite dev server on port 3000 |
 | `npm run build` | Build the production bundle to `dist/` |
-| `npm run preview` | Preview the production build locally |
+| `npm start` | Run the Express server (serves `dist/` when `NODE_ENV=production`) |
+| `npm run preview` | Preview the static build only (no AI endpoint) |
 | `npm run lint` | Type-check the project with TypeScript |
 | `npm run clean` | Remove the `dist/` directory |
 
@@ -100,14 +108,16 @@ npm run preview
 .
 ├── src/
 │   ├── components/        # React UI components (Kanban, modals, screens)
-│   ├── constants/         # Mock/demo data
+│   ├── constants/         # Default pipeline columns and mock/demo data
 │   ├── lib/               # Utilities (error handling, helpers)
+│   ├── services/          # Client for the AI job-extraction endpoint
 │   ├── App.tsx            # Root component, state, Firestore wiring
 │   ├── firebase.ts        # Firebase initialization (config from env vars)
 │   ├── types.ts           # Shared TypeScript types
 │   └── main.tsx           # Vite entry point
+├── server.ts              # Express server: Gemini job extraction + serving the app
 ├── firestore.rules        # Firestore security rules
-├── .env.example           # Template for Firebase config (copy to .env.local)
+├── .env.example           # Template for Firebase config and Gemini key (copy to .env.local)
 ├── index.html             # Vite HTML entry
 ├── vite.config.ts
 └── package.json
@@ -116,7 +126,7 @@ npm run preview
 ## Usage
 
 1. **Sign in** with your Google account on the welcome screen.
-2. **Add a job** with the "+" button in the top bar and fill in the details.
+2. **Add a job** with the "+" button in the top bar. Paste the posting link (or text) into **AI Auto-fill** to fill in the details, then add who you applied through.
 3. **Drag cards** between columns as your applications progress.
 4. **Click a card** to view full details, edit, add interview notes, attach documents, or archive.
 5. **Customize your board** via the "Edit Board" action to rename, add, or remove columns.
@@ -125,14 +135,11 @@ npm run preview
 
 ## Deployment
 
-This project builds to a static SPA and can be deployed to any static host (Firebase Hosting, Vercel, Netlify, Cloudflare Pages). For Firebase Hosting:
+The live app is deployed from Google AI Studio to Cloud Run. Because AI auto-fill runs on the Express server, the app needs a Node host (Cloud Run, Render, Fly.io, etc.), not a static host.
 
-```bash
-npm run build
-firebase deploy --only hosting
-```
-
-Make sure your production/CI environment provides the `VITE_FIREBASE_*` values (from your `.env.local`) at **build time**, since Vite inlines them into the bundle.
+- Provide the `VITE_FIREBASE_*` values at **build time**, since Vite inlines them into the bundle.
+- Provide `GEMINI_API_KEY` at **runtime** to the server, and run it with `NODE_ENV=production` so it serves `dist/`.
+- Add the deployed domain to Firebase's Authorized domains.
 
 ## License
 
