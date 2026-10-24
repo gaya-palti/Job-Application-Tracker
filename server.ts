@@ -47,30 +47,39 @@ Keep the language of the original posting. Do not invent details that are not in
 const JSON_SHAPE = `Respond with only a JSON object with exactly these keys:
 {"company": string, "title": string, "location": string, "salary": string, "requirements": string[], "description": string}`;
 
+const CANDIDATE_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
+];
+
 async function generateContentWithFallback(params: {
   contents: string;
   config?: any;
 }) {
-  try {
-    return await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      ...params,
-    });
-  } catch (err: any) {
-    const isOverload =
-      err?.message?.includes('503') ||
-      err?.message?.includes('high demand') ||
-      err?.status === 'UNAVAILABLE' ||
-      err?.status === 503;
-    if (isOverload) {
-      console.warn('gemini-3.8-flash busy, falling back to gemini-3.1-flash-lite');
-      return await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured on the server. Please attach an API key in Settings > Secrets.');
+  }
+
+  let lastError: any = null;
+
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      console.log(`[AI] Attempting extraction with model: ${model}`);
+      const response = await ai.models.generateContent({
+        model,
         ...params,
       });
+      console.log(`[AI] Successfully extracted with model: ${model}`);
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const errMsg = String(err?.message || err || '');
+      console.warn(`[AI] Model ${model} failed (${errMsg.slice(0, 160)}). Trying fallback...`);
     }
-    throw err;
   }
+
+  throw lastError;
 }
 
 app.post('/api/extract-job', async (req, res) => {
@@ -103,7 +112,15 @@ app.post('/api/extract-job', async (req, res) => {
       }
 
       const json = text.match(/\{[\s\S]*\}/)?.[0] ?? text;
-      const data = JSON.parse(json);
+      let data: any;
+      try {
+        data = JSON.parse(json);
+      } catch {
+        return res.status(422).json({
+          error: 'Could not extract clean structured data from the URL. Please try pasting the job text instead.',
+        });
+      }
+
       return res.json({
         company: data.company || '',
         title: data.title || '',
@@ -127,7 +144,15 @@ app.post('/api/extract-job', async (req, res) => {
       }
 
       const json = text.match(/\{[\s\S]*\}/)?.[0] ?? text;
-      const data = JSON.parse(json);
+      let data: any;
+      try {
+        data = JSON.parse(json);
+      } catch {
+        return res.status(422).json({
+          error: 'Could not parse structured job data. Please try again with more details.',
+        });
+      }
+
       return res.json({
         company: data.company || '',
         title: data.title || '',
@@ -139,7 +164,31 @@ app.post('/api/extract-job', async (req, res) => {
     }
   } catch (error: any) {
     console.error('Server extraction error:', error);
-    const message = error?.message || 'Failed to extract job details';
+    let message = error?.message || 'Failed to extract job details';
+
+    if (
+      message.includes('API_KEY_INVALID') ||
+      message.includes('API key not valid') ||
+      message.includes('403') ||
+      message.includes('Forbidden')
+    ) {
+      message = 'The attached Gemini API key is invalid or unauthorized. Please verify your API key in project settings.';
+    } else if (
+      message.includes('RESOURCE_EXHAUSTED') ||
+      message.includes('429') ||
+      message.includes('quota')
+    ) {
+      message = 'Gemini API quota or rate limit exceeded. Please wait a moment and try again.';
+    } else if (
+      message.includes('503') ||
+      message.includes('overloaded') ||
+      message.includes('busy') ||
+      message.includes('high demand') ||
+      message.includes('UNAVAILABLE')
+    ) {
+      message = 'Gemini models are experiencing high demand right now. Please try again shortly.';
+    }
+
     return res.status(500).json({ error: message });
   }
 });
